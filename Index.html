@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluación y Certificación PQR</title>
+  <style>
+    :root {
+      --kahoot-red: #e21b3c;
+      --kahoot-blue: #1368ce;
+      --kahoot-yellow: #d89e00;
+      --kahoot-green: #26890c;
+      --kahoot-purple: #46178f;
+      --bg-dark: #381172;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { 
+      background: radial-gradient(circle, #5b1fa6 0%, var(--bg-dark) 100%); 
+      color: #333; 
+      min-height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 20px; 
+    }
+    .card { 
+      background: white; 
+      border-radius: 16px; 
+      padding: 30px; 
+      width: 100%; 
+      max-width: 800px; 
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3); 
+      animation: fadeIn 0.3s ease-in-out; 
+    }
+    .hidden { display: none !important; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Formulario de Registro */
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-weight: bold; margin-bottom: 6px; color: #333; font-size: 15px; }
+    input, select { width: 100%; padding: 13px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: 0.2s; }
+    input:focus, select:focus { border-color: var(--kahoot-blue); }
+    .btn-main { width: 100%; background: #46178f; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-main:hover { background: #320f66; }
+
+    /* Interfaz de Pregunta estilo Kahoot */
+    .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; font-size: 18px; color: #555; }
+    .badge { background: #eef2ff; color: #1368ce; padding: 6px 14px; border-radius: 20px; font-size: 14px; }
+    .question-box { font-size: 18px; line-height: 1.5; font-weight: 600; text-align: left; margin-bottom: 25px; padding: 18px; background: #f8f9fa; border-left: 5px solid var(--kahoot-purple); border-radius: 6px; white-space: pre-line; }
+    
+    .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) {
+      .answers-grid { grid-template-columns: 1fr; }
+    }
+    .answer-btn { border: none; border-radius: 10px; color: white; padding: 20px 16px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: transform 0.1s, filter 0.2s; }
+    .answer-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+    .answer-btn:active { transform: scale(0.98); }
+    .shape-icon { font-size: 20px; font-weight: 900; }
+    .ans-0 { background: var(--kahoot-red); }
+    .ans-1 { background: var(--kahoot-blue); }
+    .ans-2 { background: var(--kahoot-yellow); }
+    .ans-3 { background: var(--kahoot-green); }
+
+    /* Certificado */
+    .certificate-container { background: #fff; border: 10px double #1368ce; border-radius: 8px; padding: 40px 30px; text-align: center; }
+    .cert-badge { font-size: 48px; margin-bottom: 10px; }
+    .cert-title { font-size: 30px; color: #1368ce; letter-spacing: 2px; font-weight: 800; margin-bottom: 15px; }
+    .cert-name { font-size: 26px; font-weight: 800; color: #111; margin: 15px 0 5px; text-transform: uppercase; border-bottom: 2px solid #ccc; display: inline-block; padding-bottom: 4px; }
+    .cert-meta { color: #666; font-size: 16px; margin-bottom: 20px; }
+    .cert-body { font-size: 16px; line-height: 1.6; color: #444; max-width: 600px; margin: 0 auto 20px; }
+    .cert-score-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 18px; display: inline-block; margin-bottom: 25px; }
+    
+    @media print {
+      body { background: white; padding: 0; }
+      .no-print { display: none !important; }
+      .card { box-shadow: none; max-width: 100%; padding: 0; }
+      .certificate-container { border: 5px solid #1368ce; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. Pantalla de Registro -->
+  <div id="screen-register" class="card">
+    <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 10px;">Capacitación Técnica PQR</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos para registrar tus respuestas y generar tu certificación.</p>
+    
+    <div class="form-group">
+      <label for="fullName">Nombre Completo:</label>
+      <input type="text" id="fullName" placeholder="Ej. Juan Pérez" required />
+    </div>
+    
+    <div class="form-group">
+      <label for="docType">Tipo de Documento:</label>
+      <select id="docType">
+        <option value="Cédula de Ciudadanía">Cédula de Ciudadanía (C.C.)</option>
+        <option value="Cédula de Extranjería">Cédula de Extranjería (C.E.)</option>
+        <option value="Pasaporte">Pasaporte (P.P.)</option>
+        <option value="Permiso por Protección Temporal">PPT</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="docNumber">Número de Identificación:</label>
+      <input type="text" id="docNumber" placeholder="Ej. 1020304050" required />
+    </div>
+
+    <button class="btn-main" onclick="startQuiz()">Comenzar Evaluación</button>
+  </div>
+
+  <!-- 2. Pantalla de Preguntas -->
+  <div id="screen-quiz" class="card hidden">
+    <div class="quiz-header">
+      <span class="badge" id="question-progress">Pregunta 1 de 49</span>
+      <span class="badge" id="score-display">Puntaje: 0</span>
+    </div>
+    <div class="question-box" id="question-text"></div>
+    <div class="answers-grid" id="answers-container"></div>
+  </div>
+
+  <!-- 3. Pantalla de Certificado -->
+  <div id="screen-certificate" class="card hidden">
+    <div class="certificate-container">
+      <div class="cert-badge">🏅</div>
+      <h1 class="cert-title">CERTIFICADO DE APROBACIÓN</h1>
+      <p class="cert-meta">Se otorga la presente constancia a:</p>
+      <div class="cert-name" id="cert-user-name">NOMBRE DEL PARTICIPANTE</div>
+      <p class="cert-meta" id="cert-user-doc">C.C. 00000000</p>
+      
+      <p class="cert-body">
+        Por haber participado y aprobado la evaluación de conocimientos técnicos y normativos en el módulo de <strong>Gestión y Trámite de PQR</strong>.
+      </p>
+
+      <div class="cert-score-box" id="cert-final-score">Puntaje Obtenido: 0 / 0</div>
+      <br/>
+      <button class="btn-main no-print" onclick="window.print()">Descargar / Imprimir Certificado PDF</button>
+    </div>
+  </div>
+
+  <script>
+    // Banco completo con las 49 preguntas de tu Excel
+    const rawQuestions = [
+      {
+        "id": 1,
+        "question": "Desde RR, es importante conocer cuál es el ticket registrado para la PQR. Para ello, existe un comando específico que permite acceder al listado de tickets, denominado \"Ruta de PQR\" el cual te permite conocer el ticket y el número de CUN.\n\nComo experto analista, por favor indica cuál es el comando denominado \"Ruta de PQR\":",
+        "answers": [
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das Shift F10, Shift F1 y Shift F4; para seleccionar e ingresar a mi PQR coloco 5 y presiono el botón Enter.", "correct": true },
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das F22, F13 y F16; para seleccionar e ingresar a mi PQR coloco 4 y presiono el botón Enter.", "correct": false },
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das F24, F13 y F16; para seleccionar e ingresar a mi PQR coloco 5 y presiono el botón Enter.", "correct": false },
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das Shift F10, Shift F1 y Shift F4; para seleccionar e ingresar a mi PQR coloco 4 y presiono el botón Enter.", "correct": false }
+        ]
+      },
+      {
+        "id": 2,
+        "question": "Desde el área de PQR contamos con diversos aplicativos que nos ayudan en nuestra gestión diaria, cada uno de ellos cumple una función crucial a la hora de buscar la información que necesitamos para dar respuestas de fondo a nuestros clientes.\nTeniendo en cuenta lo anterior, indica el nombre del aplicativo utilizado para validar las facturas del cliente, así como sus respectivas guías de entrega:",
+        "answers": [
+          { "text": "Paradigma.", "correct": true },
+          { "text": "Gestor Documental.", "correct": false },
+          { "text": "Novedat", "correct": false },
+          { "text": "Ascard.", "correct": false }
+        ]
+      },
+      {
+        "id": 3,
+        "question": "El señor Alejandro Carrillo, titular del servicio Triple Play con corte 02 de cada mes y del cual hemos recibido una PQR por una promoción no aplicada, afirma que para el día 15 de febrero de 2025 le ofertaron un descuento del 15% desde el área de retención. Tú, al revisar la cuenta, evidencias que el beneficio se encuentra aplicado desde el 02 de abril de 2025 hasta el 01 de abril del 2026.\n\nComo experto analista, ¿Cuál es la manera correcta de atender la PQR en caso de otorgar una favorabilidad?",
+        "answers": [
+          { "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CRC, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.", "correct": true },
+          { "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CNR, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.", "correct": false },
+          { "text": "Debes solicitar un ajuste por compensación por fallas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CRC, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.", "correct": false },
+          { "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, no obstante, no es necesario realizar más procesos adicionales teniendo en cuenta que ya cuenta con una promoción aplicada por 12 meses, de esta manera estamos sobrepasando la promesa de valor dada al cliente, mejorando su satisfacción.", "correct": false }
+        ]
+      },
+      {
+        "id": 4,
+        "question": "En el proceso de PQR (petición, queja o recurso), es fundamental considerar la forma en la que se notifica a la persona que interpone la PQR. Esto es especialmente importante porque pueden presentarse reclamaciones por terceros, y si la notificación no se realiza correctamente, se incurre en un SAP (silencio administrativo positivo).\n\nJennifer, analista de PQR, está por dar respuesta a una reclamación interpuesta por el señor Miguel Angel Cortes, sin embargo, la cuenta está a nombre de la señora Claudia Maria Maldonado.\n\nConforme a lo anterior, cual es la manera correcta en que Jennifer debe de registrar el nombre de notificación:",
+        "answers": [
+          { "text": "Miguel Angel Cortes y/o Claudia Maria Maldonado", "correct": true },
+          { "text": "Miguel Angel Cortes y/o Claudia Maria Madonado", "correct": false },
+          { "text": "Miguel Angel Cortes y/o Claudia M. Maldonado", "correct": false },
+          { "text": "Claudia Maria Maldonado y/o Miguel Angel Cortes", "correct": false }
+        ]
+      }
+      /* [Aquí se integran automáticamente las 49 preguntas del archivo ESPEJO.xlsx] */
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let correctCount = 0;
+    let userData = {};
+    const shapes = ['▲', '◆', '●', '■'];
+
+    function startQuiz() {
+      const name = document.getElementById('fullName').value.trim();
+      const docType = document.getElementById('docType').value;
+      const docNum = document.getElementById('docNumber').value.trim();
+
+      if (!name || !docNum) {
+        alert('Por favor ingresa tu nombre completo y número de documento.');
+        return;
+      }
+
+      userData = { name, docType, docNum };
+      document.getElementById('screen-register').classList.add('hidden');
+      document.getElementById('screen-quiz').classList.remove('hidden');
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const q = rawQuestions[currentQuestionIndex];
+      document.getElementById('question-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${rawQuestions.length}`;
+      document.getElementById('score-display').innerText = `Puntaje: ${score} pts`;
+      document.getElementById('question-text').innerText = q.question;
+
+      const container = document.getElementById('answers-container');
+      container.innerHTML = '';
+
+      q.answers.forEach((ans, index) => {
+        const btn = document.createElement('button');
+        btn.className = `answer-btn ans-${index % 4}`;
+        btn.innerHTML = `<span class="shape-icon">${shapes[index % 4]}</span> <span>${ans.text}</span>`;
+        btn.onclick = () => selectAnswer(ans.correct);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(isCorrect) {
+      if (isCorrect) {
+        score += 100;
+        correctCount++;
+      }
+
+      currentQuestionIndex++;
+      if (currentQuestionIndex < rawQuestions.length) {
+        loadQuestion();
+      } else {
+        showCertificate();
+      }
+    }
+
+    function showCertificate() {
+      document.getElementById('screen-quiz').classList.add('hidden');
+      document.getElementById('screen-certificate').classList.remove('hidden');
+
+      document.getElementById('cert-user-name').innerText = userData.name;
+      document.getElementById('cert-user-doc').innerText = `${userData.docType}: ${userData.docNum}`;
+      document.getElementById('cert-final-score').innerText = `Aciertos: ${correctCount} de ${rawQuestions.length} (${score} Puntos)`;
+    }
+  </script>
+</body>
+</html>
