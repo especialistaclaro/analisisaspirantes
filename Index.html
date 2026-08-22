@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Evaluación y Certificación PQR</title>
+
+  <!-- Firebase SDKs Compatibles para HTML puro -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --kahoot-red: #e21b3c;
@@ -73,6 +78,7 @@
     .cert-meta { color: #666; font-size: 16px; margin-bottom: 20px; }
     .cert-body { font-size: 16px; line-height: 1.6; color: #444; max-width: 600px; margin: 0 auto 20px; }
     .cert-score-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 18px; display: inline-block; margin-bottom: 25px; }
+    .db-status { font-size: 13px; color: #666; margin-top: 10px; }
     
     @media print {
       body { background: white; padding: 0; }
@@ -136,13 +142,28 @@
       </p>
 
       <div class="cert-score-box" id="cert-final-score">Puntaje Obtenido: 0 / 0</div>
+      <p class="db-status no-print" id="db-status-msg">Guardando registro en la base de datos...</p>
       <br/>
       <button class="btn-main no-print" onclick="window.print()">Descargar / Imprimir Certificado PDF</button>
     </div>
   </div>
 
   <script>
-    // Banco completo con las 49 preguntas de tu Excel
+    // 1. Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEK9ZjQLh6HVxIOERhLtog51UdmvEpFpg",
+      authDomain: "analisis-aspirantes-claro.firebaseapp.com",
+      projectId: "analisis-aspirantes-claro",
+      storageBucket: "analisis-aspirantes-claro.firebasestorage.app",
+      messagingSenderId: "692339938551",
+      appId: "1:692339938551:web:dfab7055c7c89c22d5aff2",
+      measurementId: "G-F4WE7HC76B"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 2. Banco de Preguntas extraído de ESPEJO.xlsx
     const rawQuestions = [
       {
         "id": 1,
@@ -184,7 +205,7 @@
           { "text": "Claudia Maria Maldonado y/o Miguel Angel Cortes", "correct": false }
         ]
       }
-      /* [Aquí se integran automáticamente las 49 preguntas del archivo ESPEJO.xlsx] */
+      /* Aquí se agregan las demás preguntas cargadas desde el Excel */
     ];
 
     let currentQuestionIndex = 0;
@@ -241,6 +262,26 @@
       }
     }
 
+    async function guardarEnFirestore() {
+      const statusEl = document.getElementById('db-status-msg');
+      try {
+        await db.collection("evaluaciones_aspirantes").add({
+          nombre: userData.name,
+          tipoDocumento: userData.docType,
+          numeroDocumento: userData.docNum,
+          puntajeTotal: score,
+          respuestasCorrectas: correctCount,
+          totalPreguntas: rawQuestions.length,
+          porcentajeAprobacion: Math.round((correctCount / rawQuestions.length) * 100) + "%",
+          fechaRegistro: new Date()
+        });
+        if (statusEl) statusEl.innerText = "✓ Registro guardado correctamente en Firebase.";
+      } catch (error) {
+        console.error("Error al guardar en Firestore:", error);
+        if (statusEl) statusEl.innerText = "Nota: No se pudo conectar a Firebase (Verificar reglas de Firestore).";
+      }
+    }
+
     function showCertificate() {
       document.getElementById('screen-quiz').classList.add('hidden');
       document.getElementById('screen-certificate').classList.remove('hidden');
@@ -248,6 +289,8 @@
       document.getElementById('cert-user-name').innerText = userData.name;
       document.getElementById('cert-user-doc').innerText = `${userData.docType}: ${userData.docNum}`;
       document.getElementById('cert-final-score').innerText = `Aciertos: ${correctCount} de ${rawQuestions.length} (${score} Puntos)`;
+
+      guardarEnFirestore();
     }
   </script>
 </body>
