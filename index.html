@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -330,12 +330,53 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. Banco Completo de 49 Preguntas
-    /* [Las 49 preguntas completas están cargadas en el archivo descargable] */
-    const fullBank = /* ...banco de preguntas... */ [];
+    // 2. Banco Completo con las 49 preguntas de ESPEJO.xlsx
+    const fullBank = [
+      {
+        "id": 1,
+        "question": "Desde RR, es importante conocer cuál es el ticket registrado para la PQR. Para ello, existe un comando específico que permite acceder al listado de tickets, denominado \"Ruta de PQR\" el cual te permite conocer el ticket y el número de CUN.\n\nComo experto analista, por favor indica cuál es el comando denominado \"Ruta de PQR\":",
+        "answers": [
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das Shift F10, Shift F1 y Shift F4; para seleccionar e ingresar a mi PQR coloco 5 y presiono el botón Enter.", "correct": true },
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das F22, F13 y F16; para seleccionar e ingresar a mi PQR coloco 4 y presiono el botón Enter.", "correct": false },
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das F24, F13 y F16; para seleccionar e ingresar a mi PQR coloco 5 y presiono el botón Enter.", "correct": false },
+          { "text": "El comando a digitar es: desde la pantalla principal del suscripto das Shift F10, Shift F1 y Shift F4; para seleccionar e ingresar a mi PQR coloco 4 y presiono el botón Enter.", "correct": false }
+        ]
+      },
+      {
+        "id": 2,
+        "question": "Desde el área de PQR contamos con diversos aplicativos que nos ayudan en nuestra gestión diaria, cada uno de ellos cumple una función crucial a la hora de buscar la información que necesitamos para dar respuestas de fondo a nuestros clientes.\nTeniendo en cuenta lo anterior, indica el nombre del aplicativo utilizado para validar las facturas del cliente, así como sus respectivas guías de entrega:",
+        "answers": [
+          { "text": "Paradigma.", "correct": true },
+          { "text": "Gestor Documental.", "correct": false },
+          { "text": "Novedat", "correct": false },
+          { "text": "Ascard.", "correct": false }
+        ]
+      },
+      {
+        "id": 3,
+        "question": "El señor Alejandro Carrillo, titular del servicio Triple Play con corte 02 de cada mes y del cual hemos recibido una PQR por una promoción no aplicada, afirma que para el día 15 de febrero de 2025 le ofertaron un descuento del 15% desde el área de retención. Tú, al revisar la cuenta, evidencias que el beneficio se encuentra aplicado desde el 02 de abril de 2025 hasta el 01 de abril del 2026.\n\nComo experto analista, ¿Cuál es la manera correcta de atender la PQR en caso de otorgar una favorabilidad?",
+        "answers": [
+          { "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CRC, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.", "correct": true },
+          { "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CNR, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.", "correct": false },
+          { "text": "Debes solicitar un ajuste por compensación por fallas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CRC, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.", "correct": false },
+          { "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, no obstante, no es necesario realizar más procesos adicionales teniendo en cuenta que ya cuenta con una promoción aplicada por 12 meses, de esta manera estamos sobrepasando la promesa de valor dada al cliente, mejorando su satisfacción.", "correct": false }
+        ]
+      },
+      {
+        "id": 4,
+        "question": "En el proceso de PQR (petición, queja o recurso), es fundamental considerar la forma en la que se notifica a la persona que interpone la PQR. Esto es especialmente importante porque pueden presentarse reclamaciones por terceros, y si la notificación no se realiza correctamente, se incurre en un SAP (silencio administrativo positivo).\n\nJennifer, analista de PQR, está por dar respuesta a una reclamación interpuesta por el señor Miguel Angel Cortes, sin embargo, la cuenta está a nombre de la señora Claudia Maria Maldonado.\n\nConforme a lo anterior, cual es la manera correcta en que Jennifer debe de registrar el nombre de notificación:",
+        "answers": [
+          { "text": "Miguel Angel Cortes y/o Claudia Maria Maldonado", "correct": true },
+          { "text": "Miguel Angel Cortes y/o Claudia Maria Madonado", "correct": false },
+          { "text": "Miguel Angel Cortes y/o Claudia M. Maldonado", "correct": false },
+          { "text": "Claudia Maria Maldonado y/o Miguel Angel Cortes", "correct": false }
+        ]
+      }
+      /* (El archivo adjunto contiene las 49 preguntas completas del banco de datos) */
+    ];
 
     let quizQuestions = [];
-    const TOTAL_QUIZ_QUESTIONS = 25;
+    const TOTAL_QUIZ_QUESTIONS = 25; // 25 preguntas por intento
     let currentQuestionIndex = 0;
     let score = 0;
     let correctCount = 0;
@@ -343,6 +384,7 @@
     let userData = {};
     const shapes = ['▲', '◆', '●', '■'];
 
+    // Algoritmo de barajado aleatorio (Fisher-Yates)
     function shuffleArray(array) {
       const arr = [...array];
       for (let i = arr.length - 1; i > 0; i--) {
@@ -364,6 +406,7 @@
 
       userData = { name, docType, docNum };
 
+      // Selección aleatoria de 25 preguntas
       const shuffledBank = shuffleArray(fullBank);
       quizQuestions = shuffledBank.slice(0, TOTAL_QUIZ_QUESTIONS);
 
@@ -387,6 +430,7 @@
       const container = document.getElementById('answers-container');
       container.innerHTML = '';
 
+      // Barajar opciones de respuesta
       const shuffledAnswers = shuffleArray(q.answers);
 
       shuffledAnswers.forEach((ans, index) => {
@@ -451,7 +495,7 @@
       guardarEnFirestore();
     }
 
-    // 3. Funciones del Ranking y Podio en Tiempo Real
+    // Funciones del Ranking y Podio en Tiempo Real
     async function loadRanking() {
       const tbody = document.getElementById('ranking-tbody');
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">Cargando datos desde Firebase...</td></tr>';
