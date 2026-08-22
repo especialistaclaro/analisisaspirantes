@@ -346,8 +346,9 @@
     let userData = {};
     const shapes = ['▲', '◆', '●', '■'];
 
+    // Algoritmo de aleatoriedad profunda (Fisher-Yates)
     function shuffleArray(array) {
-      const arr = [...array];
+      const arr = array.map(item => ({ ...item }));
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -374,7 +375,7 @@
       btnStart.disabled = true;
       btnStart.innerText = "Verificando registro...";
 
-      // Validación de intento único por número de documento
+      // Validación de intento único por número de documento en Firebase
       try {
         const queryCheck = await db.collection("evaluaciones_aspirantes")
                                    .where("numeroDocumento", "==", docNum)
@@ -395,7 +396,7 @@
 
       userData = { name, docType, docNum };
 
-      // Mezclar y tomar 25 preguntas aleatorias
+      // Selección estrictamente aleatoria de 25 preguntas
       const shuffledBank = shuffleArray(fullBank);
       quizQuestions = shuffledBank.slice(0, TOTAL_QUIZ_QUESTIONS);
 
@@ -419,6 +420,7 @@
       const container = document.getElementById('answers-container');
       container.innerHTML = '';
 
+      // Barajar aleatoriamente las opciones de respuesta
       const shuffledAnswers = shuffleArray(q.answers);
 
       shuffledAnswers.forEach((ans, index) => {
@@ -563,7 +565,6 @@
         typedAdminKeys = typedAdminKeys.slice(-3);
       }
 
-      // Se activa escribiendo "del" o con "Alt + D"
       if (typedAdminKeys === "del" || (e.altKey && e.key.toLowerCase() === "d")) {
         const rankingScreen = document.getElementById("screen-ranking");
         if (rankingScreen.classList.contains("hidden")) return;
