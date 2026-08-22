@@ -221,7 +221,7 @@
       <input type="text" id="docNumber" placeholder="Ej. 1020304050" required />
     </div>
 
-    <button class="btn-main" onclick="startQuiz()">Comenzar Evaluación</button>
+    <button class="btn-main" id="btn-start" onclick="startQuiz()">Comenzar Evaluación</button>
   </div>
 
   <!-- 2. Pantalla de Preguntas -->
@@ -355,7 +355,7 @@
       return arr;
     }
 
-    function startQuiz() {
+    async function startQuiz() {
       const name = document.getElementById('fullName').value.trim();
       const docType = document.getElementById('docType').value;
       const docNum = document.getElementById('docNumber').value.trim();
@@ -369,6 +369,29 @@
         alert('Cargando el banco de preguntas, intenta en un segundo...');
         return;
       }
+
+      const btnStart = document.getElementById('btn-start');
+      btnStart.disabled = true;
+      btnStart.innerText = "Verificando registro...";
+
+      // Validación de intento único por número de documento
+      try {
+        const queryCheck = await db.collection("evaluaciones_aspirantes")
+                                   .where("numeroDocumento", "==", docNum)
+                                   .get();
+
+        if (!queryCheck.empty) {
+          alert(`El documento ${docNum} ya cuenta con una evaluación registrada en el sistema. No se permite realizar más de un intento.`);
+          btnStart.disabled = false;
+          btnStart.innerText = "Comenzar Evaluación";
+          return;
+        }
+      } catch (err) {
+        console.error("Error al verificar documento:", err);
+      }
+
+      btnStart.disabled = false;
+      btnStart.innerText = "Comenzar Evaluación";
 
       userData = { name, docType, docNum };
 
@@ -468,11 +491,17 @@
       try {
         const snapshot = await db.collection("evaluaciones_aspirantes")
                                  .orderBy("puntajeTotal", "desc")
-                                 .limit(20)
+                                 .limit(50)
                                  .get();
 
         if (snapshot.empty) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">No hay evaluaciones registradas aún.</td></tr>';
+          document.getElementById('podium-name-1').innerText = '-';
+          document.getElementById('podium-score-1').innerText = '0 pts';
+          document.getElementById('podium-name-2').innerText = '-';
+          document.getElementById('podium-score-2').innerText = '0 pts';
+          document.getElementById('podium-name-3').innerText = '-';
+          document.getElementById('podium-score-3').innerText = '0 pts';
           return;
         }
 
@@ -525,6 +554,49 @@
       document.getElementById('screen-quiz').classList.add('hidden');
       document.getElementById('screen-register').classList.remove('hidden');
     }
+
+    // 4. Comando Oculto para Administrador (Eliminar Intentos)
+    let typedAdminKeys = "";
+    document.addEventListener("keydown", async (e) => {
+      typedAdminKeys += e.key.toLowerCase();
+      if (typedAdminKeys.length > 3) {
+        typedAdminKeys = typedAdminKeys.slice(-3);
+      }
+
+      // Se activa escribiendo "del" o con "Alt + D"
+      if (typedAdminKeys === "del" || (e.altKey && e.key.toLowerCase() === "d")) {
+        const rankingScreen = document.getElementById("screen-ranking");
+        if (rankingScreen.classList.contains("hidden")) return;
+
+        const adminDoc = prompt("🔒 Modo Administrador:\nIngresa el número de documento del participante a eliminar:");
+        if (!adminDoc) return;
+
+        try {
+          const snapshot = await db.collection("evaluaciones_aspirantes")
+                                   .where("numeroDocumento", "==", adminDoc.trim())
+                                   .get();
+
+          if (snapshot.empty) {
+            alert(`No se encontró ningún registro con el documento: ${adminDoc}`);
+            return;
+          }
+
+          const confirmDelete = confirm(`¿Estás seguro de eliminar los registros del documento ${adminDoc}? Esto le permitirá presentar la prueba nuevamente.`);
+          if (confirmDelete) {
+            const batch = db.batch();
+            snapshot.forEach(doc => {
+              batch.delete(doc.ref);
+            });
+            await batch.commit();
+            alert("✓ Registro eliminado con éxito.");
+            loadRanking();
+          }
+        } catch (err) {
+          console.error("Error al eliminar documento:", err);
+          alert("Error al eliminar el registro.");
+        }
+      }
+    });
   </script>
 </body>
 </html>
