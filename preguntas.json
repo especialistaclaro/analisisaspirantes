@@ -1,603 +1,1000 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evaluación Técnica PQR - Aspirantes</title>
-
-  <!-- Firebase Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-  <style>
-    :root {
-      --kahoot-red: #e21b3c;
-      --kahoot-blue: #1368ce;
-      --kahoot-yellow: #d89e00;
-      --kahoot-green: #26890c;
-      --kahoot-purple: #46178f;
-      --bg-dark: #2a085c;
-    }
-    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-    body { 
-      background: radial-gradient(circle, #5b1fa6 0%, var(--bg-dark) 100%); 
-      color: #333; 
-      min-height: 100vh; 
-      display: flex; 
-      flex-direction: column;
-      justify-content: center; 
-      align-items: center; 
-      padding: 20px; 
-    }
-    .card { 
-      background: white; 
-      border-radius: 18px; 
-      padding: 30px; 
-      width: 100%; 
-      max-width: 850px; 
-      box-shadow: 0 14px 35px rgba(0,0,0,0.35); 
-      animation: fadeIn 0.3s ease-in-out; 
-      position: relative;
-    }
-    .hidden { display: none !important; }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Barra Superior de Navegación */
-    .top-nav {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .nav-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid white;
-      color: white;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .nav-btn:hover {
-      background: white;
-      color: var(--kahoot-purple);
-    }
-
-    /* Formulario de Registro */
-    .form-group { margin-bottom: 18px; }
-    label { display: block; font-weight: bold; margin-bottom: 6px; color: #333; font-size: 15px; }
-    input, select { width: 100%; padding: 13px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: 0.2s; }
-    input:focus, select:focus { border-color: var(--kahoot-blue); }
-    .btn-main { width: 100%; background: #46178f; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .btn-main:hover { background: #320f66; }
-
-    /* Interfaz de Pregunta estilo Kahoot */
-    .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; font-size: 18px; color: #555; }
-    .badge { background: #eef2ff; color: #1368ce; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; }
-    .question-box { font-size: 17px; line-height: 1.5; font-weight: 600; text-align: left; margin-bottom: 25px; padding: 18px; background: #f8f9fa; border-left: 6px solid var(--kahoot-purple); border-radius: 6px; white-space: pre-line; }
-    
-    .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 650px) {
-      .answers-grid { grid-template-columns: 1fr; }
-    }
-    .answer-btn { border: none; border-radius: 10px; color: white; padding: 18px 14px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: transform 0.1s, filter 0.2s; }
-    .answer-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
-    .answer-btn:active { transform: scale(0.98); }
-    .shape-icon { font-size: 20px; font-weight: 900; }
-    .ans-0 { background: var(--kahoot-red); }
-    .ans-1 { background: var(--kahoot-blue); }
-    .ans-2 { background: var(--kahoot-yellow); }
-    .ans-3 { background: var(--kahoot-green); }
-
-    /* Resultados y Certificación */
-    .certificate-container { background: #fff; border: 8px double #1368ce; border-radius: 12px; padding: 35px 25px; text-align: center; }
-    .cert-badge { font-size: 48px; margin-bottom: 8px; }
-    .cert-title { font-size: 26px; color: #1368ce; letter-spacing: 1px; font-weight: 800; margin-bottom: 12px; }
-    .cert-name { font-size: 22px; font-weight: 800; color: #111; margin: 10px 0 4px; text-transform: uppercase; border-bottom: 2px solid #ccc; display: inline-block; padding-bottom: 4px; }
-    .cert-meta { color: #666; font-size: 15px; margin-bottom: 15px; }
-    .cert-body { font-size: 15px; line-height: 1.6; color: #444; max-width: 620px; margin: 0 auto 20px; }
-    
-    .stats-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-    .stat-box { padding: 15px 25px; border-radius: 10px; font-weight: bold; min-width: 140px; text-align: center; }
-    .stat-correct { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    .stat-wrong { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-    .stat-score { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
-    .stat-value { font-size: 24px; display: block; }
-    .stat-label { font-size: 13px; text-transform: uppercase; opacity: 0.9; }
-
-    .db-status { font-size: 14px; font-weight: 600; color: #1368ce; margin: 10px 0 15px; }
-
-    /* Podio y Ranking Estilo Kahoot */
-    .podium-container {
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      gap: 12px;
-      margin: 25px 0;
-      height: 190px;
-    }
-    .podium-step {
-      width: 100px;
-      border-radius: 10px 10px 0 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      padding-bottom: 12px;
-      color: white;
-      font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      animation: risePodium 0.6s ease-out;
-    }
-    @keyframes risePodium {
-      from { height: 0; }
-    }
-    .step-1 { height: 160px; background: #e21b3c; order: 2; }
-    .step-2 { height: 120px; background: #1368ce; order: 1; }
-    .step-3 { height: 95px; background: #d89e00; order: 3; }
-    .podium-num { font-size: 28px; }
-    .podium-name { font-size: 12px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
-    
-    .leaderboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    .leaderboard-table th {
-      background: #f1f5f9;
-      padding: 12px;
-      text-align: left;
-      font-size: 14px;
-      color: #475569;
-      border-bottom: 2px solid #e2e8f0;
-    }
-    .leaderboard-table td {
-      padding: 12px;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 14px;
-    }
-    .leaderboard-table tr:hover {
-      background: #f8fafc;
-    }
-    .rank-tag {
-      display: inline-block;
-      width: 28px;
-      height: 28px;
-      line-height: 28px;
-      border-radius: 50%;
-      text-align: center;
-      font-weight: bold;
-      color: white;
-      background: #64748b;
-    }
-    .rank-1 { background: #e21b3c; }
-    .rank-2 { background: #1368ce; }
-    .rank-3 { background: #d89e00; }
-    
-    @media print {
-      body { background: white; padding: 0; }
-      .no-print { display: none !important; }
-      .card { box-shadow: none; max-width: 100%; padding: 0; }
-      .certificate-container { border: 5px solid #1368ce; }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Barra Superior de Navegación -->
-  <div class="top-nav no-print" style="width: 100%; max-width: 850px;">
-    <button class="nav-btn" id="btn-nav-quiz" onclick="showQuizTab()">📝 Evaluación</button>
-    <button class="nav-btn" id="btn-nav-ranking" onclick="showRankingTab()">🏆 Ver Ranking</button>
-  </div>
-
-  <!-- 1. Pantalla de Registro -->
-  <div id="screen-register" class="card">
-    <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 8px;">Evaluación de Aspirantes PQR</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos personales para iniciar la prueba. Se seleccionarán <strong>25 preguntas aleatorias</strong>.</p>
-    
-    <div class="form-group">
-      <label for="fullName">Nombre Completo:</label>
-      <input type="text" id="fullName" placeholder="Ej. Juan Pérez" required />
-    </div>
-    
-    <div class="form-group">
-      <label for="docType">Tipo de Documento:</label>
-      <select id="docType">
-        <option value="Cédula de Ciudadanía">Cédula de Ciudadanía (C.C.)</option>
-        <option value="Cédula de Extranjería">Cédula de Extranjería (C.E.)</option>
-        <option value="Pasaporte">Pasaporte (P.P.)</option>
-        <option value="Permiso por Protección Temporal">PPT</option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label for="docNumber">Número de Identificación:</label>
-      <input type="text" id="docNumber" placeholder="Ej. 1020304050" required />
-    </div>
-
-    <button class="btn-main" id="btn-start" onclick="startQuiz()">Comenzar Evaluación</button>
-  </div>
-
-  <!-- 2. Pantalla de Preguntas -->
-  <div id="screen-quiz" class="card hidden">
-    <div class="quiz-header">
-      <span class="badge" id="question-progress">Pregunta 1 de 25</span>
-      <span class="badge" id="score-display">Puntaje: 0 pts</span>
-    </div>
-    <div class="question-box" id="question-text"></div>
-    <div class="answers-grid" id="answers-container"></div>
-  </div>
-
-  <!-- 3. Pantalla de Resultados y Certificado -->
-  <div id="screen-certificate" class="card hidden">
-    <div class="certificate-container">
-      <div class="cert-badge">📊</div>
-      <h1 class="cert-title">RESULTADOS DE LA EVALUACIÓN</h1>
-      <p class="cert-meta">Participante evaluado:</p>
-      <div class="cert-name" id="cert-user-name">NOMBRE DEL PARTICIPANTE</div>
-      <p class="cert-meta" id="cert-user-doc">C.C. 00000000</p>
-      
-      <p class="cert-body">
-        Ha finalizado la prueba técnica de conocimientos normativos y procedimentales para el área de <strong>Gestión y Trámite de PQR</strong>.
-      </p>
-
-      <div class="stats-container">
-        <div class="stat-box stat-correct">
-          <span class="stat-value" id="res-correct">0</span>
-          <span class="stat-label">Aciertos</span>
-        </div>
-        <div class="stat-box stat-wrong">
-          <span class="stat-value" id="res-wrong">0</span>
-          <span class="stat-label">Errores</span>
-        </div>
-        <div class="stat-box stat-score">
-          <span class="stat-value" id="res-percent">0%</span>
-          <span class="stat-label">Aprobación</span>
-        </div>
-      </div>
-
-      <p class="db-status no-print" id="db-status-msg">Enviando registro a la base de datos de Firebase...</p>
-      
-      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-        <button class="btn-main no-print" style="max-width: 280px;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-        <button class="btn-main no-print" style="max-width: 280px; background: var(--kahoot-blue);" onclick="showRankingTab()">🏆 Ver Podio y Ranking</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. Pestaña de Ranking y Podio Estilo Kahoot -->
-  <div id="screen-ranking" class="card hidden">
-    <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 5px;">🏆 Tabla de Clasificación & Ranking</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 15px;">Puntajes en tiempo real sincronizados desde Firebase Firestore.</p>
-
-    <!-- Podio Top 3 -->
-    <div class="podium-container" id="podium-section">
-      <div class="podium-step step-2">
-        <span class="podium-name" id="podium-name-2">-</span>
-        <span id="podium-score-2" style="font-size:12px; margin-bottom:4px;">0 pts</span>
-        <span class="podium-num">2</span>
-      </div>
-      <div class="podium-step step-1">
-        <span class="podium-name" id="podium-name-1">-</span>
-        <span id="podium-score-1" style="font-size:13px; margin-bottom:4px;">0 pts</span>
-        <span class="podium-num">1</span>
-      </div>
-      <div class="podium-step step-3">
-        <span class="podium-name" id="podium-name-3">-</span>
-        <span id="podium-score-3" style="font-size:12px; margin-bottom:4px;">0 pts</span>
-        <span class="podium-num">3</span>
-      </div>
-    </div>
-
-    <!-- Tabla de Todos los Participantes -->
-    <div style="max-height: 280px; overflow-y: auto;">
-      <table class="leaderboard-table">
-        <thead>
-          <tr>
-            <th style="width: 50px;">Pos</th>
-            <th>Aspirante</th>
-            <th style="text-align: center;">Aciertos</th>
-            <th style="text-align: right;">Puntaje</th>
-          </tr>
-        </thead>
-        <tbody id="ranking-tbody">
-          <tr><td colspan="4" style="text-align:center; color:#888;">Cargando ranking...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <button class="btn-main" style="margin-top: 20px; background: #64748b;" onclick="showQuizTab()">Volver al Inicio</button>
-  </div>
-
-  <script>
-    // 1. Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyDEK9ZjQLh6HVxIOERhLtog51UdmvEpFpg",
-      authDomain: "analisis-aspirantes-claro.firebaseapp.com",
-      projectId: "analisis-aspirantes-claro",
-      storageBucket: "analisis-aspirantes-claro.firebasestorage.app",
-      messagingSenderId: "692339938551",
-      appId: "1:692339938551:web:dfab7055c7c89c22d5aff2",
-      measurementId: "G-F4WE7HC76B"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // 2. Carga dinámica de preguntas desde preguntas.json
-    let fullBank = [];
-    fetch('preguntas.json')
-      .then(res => res.json())
-      .then(data => { fullBank = data; })
-      .catch(err => console.error("Error al cargar preguntas.json:", err));
-
-    let quizQuestions = [];
-    const TOTAL_QUIZ_QUESTIONS = 25;
-    let currentQuestionIndex = 0;
-    let score = 0;
-    let correctCount = 0;
-    let wrongCount = 0;
-    let userData = {};
-    const shapes = ['▲', '◆', '●', '■'];
-
-    // Algoritmo de aleatoriedad profunda (Fisher-Yates)
-    function shuffleArray(array) {
-      const arr = array.map(item => ({ ...item }));
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+[
+  {
+    "id": 1,
+    "question": "Desde RR, es importante conocer cuál es el ticket registrado para la PQR. Para ello, existe un comando específico que permite acceder al listado de tickets, denominado \"Ruta de PQR\" el cual te permite conocer el ticket y el número de CUN.\n\nComo experto analista, por favor indica cuál es el comando denominado \"Ruta de PQR\":",
+    "answers": [
+      {
+        "text": "El comando a digitar es: desde la pantalla principal del suscripto das Shift F10, Shift F1 y Shift F4; para seleccionar e ingresar a mi PQR coloco 5 y presiono el botón Enter.",
+        "correct": true
+      },
+      {
+        "text": "El comando a digitar es: desde la pantalla principal del suscripto das F22, F13 y F16; para seleccionar e ingresar a mi PQR coloco 4 y presiono el botón Enter.",
+        "correct": false
+      },
+      {
+        "text": "El comando a digitar es: desde la pantalla principal del suscripto das F24, F13 y F16; para seleccionar e ingresar a mi PQR coloco 5 y presiono el botón Enter.",
+        "correct": false
+      },
+      {
+        "text": "El comando a digitar es: desde la pantalla principal del suscripto das Shift F10, Shift F1 y Shift F4; para seleccionar e ingresar a mi PQR coloco 4 y presiono el botón Enter.",
+        "correct": false
       }
-      return arr;
-    }
-
-    async function startQuiz() {
-      const name = document.getElementById('fullName').value.trim();
-      const docType = document.getElementById('docType').value;
-      const docNum = document.getElementById('docNumber').value.trim();
-
-      if (!name || !docNum) {
-        alert('Por favor ingresa tu nombre completo y número de documento.');
-        return;
+    ]
+  },
+  {
+    "id": 2,
+    "question": "Desde el área de PQR contamos con diversos aplicativos que nos ayudan en nuestra gestión diaria, cada uno de ellos cumple una función crucial a la hora de buscar la información que necesitamos para dar respuestas de fondo a nuestros clientes.\nTeniendo en cuenta lo anterior, indica el nombre del aplicativo utilizado para validar las facturas del cliente, así como sus respectivas guías de entrega:",
+    "answers": [
+      {
+        "text": "Paradigma.",
+        "correct": true
+      },
+      {
+        "text": "Gestor Documental.",
+        "correct": false
+      },
+      {
+        "text": "Novedat",
+        "correct": false
+      },
+      {
+        "text": "Ascard.",
+        "correct": false
       }
-
-      if (fullBank.length === 0) {
-        alert('Cargando el banco de preguntas, intenta en un segundo...');
-        return;
+    ]
+  },
+  {
+    "id": 3,
+    "question": "El señor Alejandro Carrillo, titular del servicio Triple Play con corte 02 de cada mes y del cual hemos recibido una PQR por una promoción no aplicada, afirma que para el día 15 de febrero de 2025 le ofertaron un descuento del 15% desde el área de retención. Tú, al revisar la cuenta, evidencias que el beneficio se encuentra aplicado desde el 02 de abril de 2025 hasta el 01 de abril del 2026.\n\nComo experto analista, ¿Cuál es la manera correcta de atender la PQR en caso de otorgar una favorabilidad?",
+    "answers": [
+      {
+        "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CRC, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.",
+        "correct": true
+      },
+      {
+        "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CNR, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.",
+        "correct": false
+      },
+      {
+        "text": "Debes solicitar un ajuste por compensación por fallas para el mes en que debía aplicarse la campaña, adicional debes realizar el escalamiento a través de la marcación CAN CRC, especificando en una nota en F7 la corrección de la campaña para dar cumplimiento a los 12 meses de la promoción ofertada inicialmente.",
+        "correct": false
+      },
+      {
+        "text": "Debes solicitar un ajuste por diferencia de tarifas para el mes en que debía aplicarse la campaña, no obstante, no es necesario realizar más procesos adicionales teniendo en cuenta que ya cuenta con una promoción aplicada por 12 meses, de esta manera estamos sobrepasando la promesa de valor dada al cliente, mejorando su satisfacción.",
+        "correct": false
       }
-
-      const btnStart = document.getElementById('btn-start');
-      btnStart.disabled = true;
-      btnStart.innerText = "Verificando registro...";
-
-      // Validación de intento único por número de documento en Firebase
-      try {
-        const queryCheck = await db.collection("evaluaciones_aspirantes")
-                                   .where("numeroDocumento", "==", docNum)
-                                   .get();
-
-        if (!queryCheck.empty) {
-          alert(`El documento ${docNum} ya cuenta con una evaluación registrada en el sistema. No se permite realizar más de un intento.`);
-          btnStart.disabled = false;
-          btnStart.innerText = "Comenzar Evaluación";
-          return;
-        }
-      } catch (err) {
-        console.error("Error al verificar documento:", err);
+    ]
+  },
+  {
+    "id": 4,
+    "question": "En el proceso de PQR (petición, queja o recurso), es fundamental considerar la forma en la que se notifica a la persona que interpone la PQR. Esto es especialmente importante porque pueden presentarse reclamaciones por terceros, y si la notificación no se realiza correctamente, se incurre en un SAP (silencio administrativo positivo).\n\nJennifer, analista de PQR, está por dar respuesta a una reclamación interpuesta por el señor Miguel Angel Cortes, sin embargo, la cuenta está a nombre de la señora Claudia Maria Maldonado.\n\nConforme a lo anterior, cual es la manera correcta en que Jennifer debe de registrar el nombre de notificación:",
+    "answers": [
+      {
+        "text": "Miguel Angel Cortes y/o Claudia Maria Maldonado",
+        "correct": true
+      },
+      {
+        "text": "Miguel Angel Cortes y/o Claudia Maria Madonado",
+        "correct": false
+      },
+      {
+        "text": "Miguel Angel Cortes y/o Claudia M. Maldonado",
+        "correct": false
+      },
+      {
+        "text": "Claudia Maria Maldonado y/o Migel Angel Cortes",
+        "correct": false
       }
-
-      btnStart.disabled = false;
-      btnStart.innerText = "Comenzar Evaluación";
-
-      userData = { name, docType, docNum };
-
-      // Selección estrictamente aleatoria de 25 preguntas
-      const shuffledBank = shuffleArray(fullBank);
-      quizQuestions = shuffledBank.slice(0, TOTAL_QUIZ_QUESTIONS);
-
-      currentQuestionIndex = 0;
-      score = 0;
-      correctCount = 0;
-      wrongCount = 0;
-
-      document.getElementById('screen-register').classList.add('hidden');
-      document.getElementById('screen-ranking').classList.add('hidden');
-      document.getElementById('screen-quiz').classList.remove('hidden');
-      loadQuestion();
-    }
-
-    function loadQuestion() {
-      const q = quizQuestions[currentQuestionIndex];
-      document.getElementById('question-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${quizQuestions.length}`;
-      document.getElementById('score-display').innerText = `Puntaje: ${score} pts`;
-      document.getElementById('question-text').innerText = q.question;
-
-      const container = document.getElementById('answers-container');
-      container.innerHTML = '';
-
-      // Barajar aleatoriamente las opciones de respuesta
-      const shuffledAnswers = shuffleArray(q.answers);
-
-      shuffledAnswers.forEach((ans, index) => {
-        const btn = document.createElement('button');
-        btn.className = `answer-btn ans-${index % 4}`;
-        btn.innerHTML = `<span class="shape-icon">${shapes[index % 4]}</span> <span>${ans.text}</span>`;
-        btn.onclick = () => selectAnswer(ans.correct);
-        container.appendChild(btn);
-      });
-    }
-
-    function selectAnswer(isCorrect) {
-      if (isCorrect) {
-        score += 100;
-        correctCount++;
-      } else {
-        wrongCount++;
+    ]
+  },
+  {
+    "id": 5,
+    "question": "Sergio ha radicado una PQR solicitando información sobre la activación de Netflix, ya que indica que el valor cobrado es mayor al valor informado. Como asesor, debes verificar el medio de activación del servicio para proporcionar información verídica y de fondo al cliente.\n\nComo experto analista, ¿cómo identificarías que el servicio se activó de manera autogestionable?",
+    "answers": [
+      {
+        "text": "Para poder identificar que el servicio se activó de manera autogestionable, debemos ingresar a RR directamente a las órdenes de trabajo y ubicar la OT que activó el adicional. Una vez allí, debes validar que el usuario que completó la OT es “STORRXXX” y el código de vendedor es 9999. Bajo estos parámetros, sabrás que la activación se hizo de manera autogestionable.",
+        "correct": true
+      },
+      {
+        "text": "Para verificar que el servicio se activó de manera autogestionable, primero accede a RR y examina las órdenes de trabajo. Encuentra la OT que corresponde a la activación del adicional y asegúrate de que el usuario que la completó sea “QSER” y el código de vendedor sea 9999. Estos indicadores confirmarán que la activación fue autogestionada.",
+        "correct": false
+      },
+      {
+        "text": "Primero, ingresa a RR y revisa las órdenes de trabajo para confirmar que el servicio se activó de manera autogestionable. Localiza la OT correspondiente a la activación del adicional y verifica que el usuario que la completó sea un usuario de RED de Claro y que el código de vendedor sea 9999. Estos detalles te permitirán confirmar que la activación fue autogestionada.",
+        "correct": false
+      },
+      {
+        "text": "Accede primero a RR y examina las órdenes de trabajo para verificar que el servicio se activó de manera autogestionable. Encuentra la OT correspondiente a la activación del adicional y asegúrate de que el usuario que la completó sea un usuario de RED de Claro y que el código de vendedor sea distinto a 9999. Estos detalles te permitirán confirmar si la activación fue gestionada por el cliente.",
+        "correct": false
       }
-
-      currentQuestionIndex++;
-      if (currentQuestionIndex < quizQuestions.length) {
-        loadQuestion();
-      } else {
-        showResults();
+    ]
+  },
+  {
+    "id": 6,
+    "question": "Ivonne, cliente de Claro Hogar, ha radicado una PQR solicitando la cancelación total del servicio el día 28 de mayo de 2025. Al revisar la solicitud, evidenciamos que el cliente tiene corte el día 2 de cada mes.\n\nComo experto analista, indícanos cuál debe ser la fecha de cancelación del servicio del cliente y qué validaciones adicionales realizarías para dar una respuesta de fondo al cliente.",
+    "answers": [
+      {
+        "text": "Para atender el caso de Ivonne, primero debemos validar la fecha de activación del servicio. No solo debemos radicar la solicitud de cancelación del servicio, sino también constatar si el cliente tiene vigente o activa la cláusula de permanencia. Esto es importante para evitar que el cliente pueda ser reportado ante las centrales de riesgo sin motivo. Al momento de solicitar la desconexión de la cuenta, recuerda que esta se haría efectiva el 2 de julio de 2025, cumpliendo con las fechas de preaviso.",
+        "correct": true
+      },
+      {
+        "text": "Para atender el caso de Ivonne, primero debemos validar la fecha de activación del servicio. No solo debemos radicar la solicitud de cancelación del servicio, sino también constatar si el cliente tiene vigente o activa la cláusula de permanencia. Esto es importante para evitar que el cliente pueda ser reportado ante las centrales de riesgo sin motivo. Al momento de solicitar la desconexión de la cuenta, recuerda que esta se haría efectiva el 2 de junio de 2025, cumpliendo con las fechas de preaviso.",
+        "correct": false
+      },
+      {
+        "text": "Para atender el caso de Ivonne, primero debemos validar la fecha de activación del servicio. No solo debemos radicar la solicitud de cancelación del servicio, sino también constatar si el cliente tiene vigente o activa la cláusula de permanencia. Esto es importante para evitar que el cliente pueda ser reportado ante las centrales de riesgo sin motivo. Al momento de solicitar la desconexión de la cuenta, recuerda que esta se haría efectiva de manera inmediata, cumpliendo con las fechas de preaviso.",
+        "correct": false
+      },
+      {
+        "text": "Para atender el caso de Ivonne, primero debemos validar la fecha de activación del servicio. Esto permitirá calcular con mayor precisión cuándo debe ser cancelada la cuenta, evitando que el cliente deba pagar una factura adicional sin motivo. Al momento de solicitar la desconexión de la cuenta, dependiendo de la fecha de activación, esta puede ser el 2 de junio de 2025 o el 2 de julio de 2025.",
+        "correct": false
       }
-    }
-
-    async function guardarEnFirestore() {
-      const statusEl = document.getElementById('db-status-msg');
-      try {
-        const approvalRate = Math.round((correctCount / quizQuestions.length) * 100);
-        await db.collection("evaluaciones_aspirantes").add({
-          nombre: userData.name,
-          tipoDocumento: userData.docType,
-          numeroDocumento: userData.docNum,
-          aciertos: correctCount,
-          errores: wrongCount,
-          totalPreguntas: quizQuestions.length,
-          puntajeTotal: score,
-          porcentajeAprobacion: approvalRate + "%",
-          fechaRegistro: new Date().toISOString()
-        });
-        if (statusEl) statusEl.innerText = "✓ Registro guardado exitosamente en Firebase Firestore.";
-      } catch (error) {
-        console.error("Error al guardar en Firestore:", error);
-        if (statusEl) statusEl.innerText = "✓ Prueba finalizada.";
+    ]
+  },
+  {
+    "id": 7,
+    "question": "Estás revisando una PQR de Sandra, una cliente de Claro Hogar, en la que solicita la cancelación del servicio. Al realizar esta revisión, evidencias que el servicio debe cancelarse el día 2 de abril de 2025. También identificas que el servicio fue instalado el 2 de marzo de 2024, con dos meses al 100% de descuento.\n\nComo analista experto, ¿qué información proporcionarías al cliente respecto al vencimiento de la cláusula de permanencia?",
+    "answers": [
+      {
+        "text": "Para consultar la vigencia de la permanencia desde RR ingresamos al menú alternativo con el botón de ESC, seleccionamos la opción 3, después la opción 11, después la opción 2 y se procede a realizar la consulta con número de cuenta. “Actualmente, su suscripción cuenta con una cláusula de permanencia activa, con un mes pendiente, por lo que debe realizar el pago correspondiente a dicho periodo”.",
+        "correct": true
+      },
+      {
+        "text": "Para consultar la vigencia de la permanencia desde RR ingresamos al menú alternativo con el botón de ESC, seleccionamos la opción 3, después la opción 11, después la opción 2 y se procede a realizar la consulta con número de cuenta. “Nos complace informarle que su suscripción actual no cuenta con una cláusula de permanencia activa. Esto se debe a que dicha cláusula ha culminado, lo que significa que ya no está sujeto a ningún compromiso de permanencia”.",
+        "correct": false
+      },
+      {
+        "text": "Para consultar la vigencia de la permanencia desde RR ingresamos al menú alternativo con el botón de ESC, seleccionamos la opción 3, después la opción 11, después la opción 2 y se procede a realizar la consulta con número de cuenta. “Nos complace informarle que su suscripción actual no cuenta con una cláusula de permanencia activa, ya que esta fue exonerada. Esto significa que no está sujeto a ningún compromiso de permanencia y puede disfrutar de nuestros servicios con total libertad”.",
+        "correct": false
       }
-    }
-
-    function showResults() {
-      document.getElementById('screen-quiz').classList.add('hidden');
-      document.getElementById('screen-certificate').classList.remove('hidden');
-
-      document.getElementById('cert-user-name').innerText = userData.name;
-      document.getElementById('cert-user-doc').innerText = `${userData.docType}: ${userData.docNum}`;
-
-      document.getElementById('res-correct').innerText = correctCount;
-      document.getElementById('res-wrong').innerText = wrongCount;
-      const percent = Math.round((correctCount / quizQuestions.length) * 100);
-      document.getElementById('res-percent').innerText = `${percent}%`;
-
-      guardarEnFirestore();
-    }
-
-    // 3. Funciones del Ranking y Podio en Tiempo Real
-    async function loadRanking() {
-      const tbody = document.getElementById('ranking-tbody');
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">Cargando datos desde Firebase...</td></tr>';
-      
-      try {
-        const snapshot = await db.collection("evaluaciones_aspirantes")
-                                 .orderBy("puntajeTotal", "desc")
-                                 .limit(50)
-                                 .get();
-
-        if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">No hay evaluaciones registradas aún.</td></tr>';
-          document.getElementById('podium-name-1').innerText = '-';
-          document.getElementById('podium-score-1').innerText = '0 pts';
-          document.getElementById('podium-name-2').innerText = '-';
-          document.getElementById('podium-score-2').innerText = '0 pts';
-          document.getElementById('podium-name-3').innerText = '-';
-          document.getElementById('podium-score-3').innerText = '0 pts';
-          return;
-        }
-
-        tbody.innerHTML = '';
-        let rank = 1;
-        const top3 = [];
-
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (rank <= 3) top3.push(data);
-
-          const tr = document.createElement('tr');
-          const badgeClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-          tr.innerHTML = `
-            <td><span class="rank-tag ${badgeClass}">${rank}</span></td>
-            <td><strong>${data.nombre || 'Anónimo'}</strong></td>
-            <td style="text-align:center;">${data.aciertos || 0} / ${data.totalPreguntas || 25}</td>
-            <td style="text-align:right; font-weight:bold; color:var(--kahoot-purple);">${data.puntajeTotal || 0} pts</td>
-          `;
-          tbody.appendChild(tr);
-          rank++;
-        });
-
-        document.getElementById('podium-name-1').innerText = top3[0]?.nombre || '-';
-        document.getElementById('podium-score-1').innerText = top3[0] ? `${top3[0].puntajeTotal} pts` : '0 pts';
-
-        document.getElementById('podium-name-2').innerText = top3[1]?.nombre || '-';
-        document.getElementById('podium-score-2').innerText = top3[1] ? `${top3[1].puntajeTotal} pts` : '0 pts';
-
-        document.getElementById('podium-name-3').innerText = top3[2]?.nombre || '-';
-        document.getElementById('podium-score-3').innerText = top3[2] ? `${top3[2].puntajeTotal} pts` : '0 pts';
-
-      } catch (err) {
-        console.error("Error al obtener ranking:", err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#b91c1c;">Error al conectar con la base de datos de Firebase.</td></tr>';
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Un cliente que actualmente no tiene una cláusula de permanencia activa en su contrato solicita el traslado de su servicio a una nueva ubicación. La empresa, con el objetivo de mantener al cliente y evitar el cobro del traslado, le ofrece la opción de renovar la cláusula de permanencia. Esta renovación implica que el cliente se compromete a permanecer con el servicio por un período adicional de doce (12) meses. Si el cliente acepta esta oferta, se le exime del costo del traslado.\nActualmente, estas revisando una PQR, donde evidencias a través de la llamada que el cliente acepta la renovación de la cláusula con el fin de evitar el cobro del proceso de traslados, sin embargo, este cobro fue efectuado en RR.\nComo analista de PQR, para gestionar de manera correcta el caso, ¿cuál es el procedimiento adecuado a seguir si el cliente acepta la renovación de la cláusula de permanencia?",
+    "answers": [
+      {
+        "text": "Se debe realizar la solicitud de ajustes por valor de $100.000 IVA incluido para dar favorabilidad.",
+        "correct": true
+      },
+      {
+        "text": "Se debe realizar la solicitud de ajustes por valor de $110.000 IVA incluido para dar favorabilidad.",
+        "correct": false
+      },
+      {
+        "text": "Se aclara en la respuesta que la permanencia no se renovó por lo que es correcto el cobro realizado.",
+        "correct": false
+      },
+      {
+        "text": "Se debe realizar la solicitud de ajustes por valor de $100.000 antes de IVA para dar favorabilidad.",
+        "correct": false
       }
-    }
-
-    function showRankingTab() {
-      document.getElementById('screen-register').classList.add('hidden');
-      document.getElementById('screen-quiz').classList.add('hidden');
-      document.getElementById('screen-certificate').classList.add('hidden');
-      document.getElementById('screen-ranking').classList.remove('hidden');
-      loadRanking();
-    }
-
-    function showQuizTab() {
-      document.getElementById('screen-ranking').classList.add('hidden');
-      document.getElementById('screen-certificate').classList.add('hidden');
-      document.getElementById('screen-quiz').classList.add('hidden');
-      document.getElementById('screen-register').classList.remove('hidden');
-    }
-
-    // 4. Comando Oculto para Administrador (Eliminar Intentos)
-    let typedAdminKeys = "";
-    document.addEventListener("keydown", async (e) => {
-      typedAdminKeys += e.key.toLowerCase();
-      if (typedAdminKeys.length > 3) {
-        typedAdminKeys = typedAdminKeys.slice(-3);
+    ]
+  },
+  {
+    "id": 9,
+    "question": "En Claro, es fundamental que los empleados comprendan y apliquen correctamente las políticas de favorabilidad para realizar ajustes en los servicios tanto móviles como de hogar. Estas políticas están diseñadas para asegurar que los clientes reciban un trato justo y beneficioso cuando se presentan problemas o solicitudes de ajustes en sus servicios. Conocer y aplicar estas políticas no solo mejora la satisfacción del cliente, sino que también ayuda a reducir los índices de reincidencia, recurrencia y la radicación de tutelas, además de mejorar el indicador de NPS.\nSegún tus conocimientos, indica uno de los objetivos principales de las políticas de favorabilidad en Claro PQRS.",
+    "answers": [
+      {
+        "text": "Reducir los índices de reincidencia, recurrencia y la radicación de tutelas, y mejorar el NPS.",
+        "correct": true
+      },
+      {
+        "text": "Disminuir el número de PQRS así como las tarifas de los servicios.",
+        "correct": false
+      },
+      {
+        "text": "Reducir cualquier tipo de ajuste en los servicios enviado por cualquier otro motivo.",
+        "correct": false
+      },
+      {
+        "text": "Reducir el número NPS a través de los clientes reincidentes y recurrentes.",
+        "correct": false
       }
-
-      if (typedAdminKeys === "del" || (e.altKey && e.key.toLowerCase() === "d")) {
-        const rankingScreen = document.getElementById("screen-ranking");
-        if (rankingScreen.classList.contains("hidden")) return;
-
-        const adminDoc = prompt("🔒 Modo Administrador:\nIngresa el número de documento del participante a eliminar:");
-        if (!adminDoc) return;
-
-        try {
-          const snapshot = await db.collection("evaluaciones_aspirantes")
-                                   .where("numeroDocumento", "==", adminDoc.trim())
-                                   .get();
-
-          if (snapshot.empty) {
-            alert(`No se encontró ningún registro con el documento: ${adminDoc}`);
-            return;
-          }
-
-          const confirmDelete = confirm(`¿Estás seguro de eliminar los registros del documento ${adminDoc}? Esto le permitirá presentar la prueba nuevamente.`);
-          if (confirmDelete) {
-            const batch = db.batch();
-            snapshot.forEach(doc => {
-              batch.delete(doc.ref);
-            });
-            await batch.commit();
-            alert("✓ Registro eliminado con éxito.");
-            loadRanking();
-          }
-        } catch (err) {
-          console.error("Error al eliminar documento:", err);
-          alert("Error al eliminar el registro.");
-        }
+    ]
+  },
+  {
+    "id": 10,
+    "question": "Dentro de las PQR relacionadas con equipos de tecnología financiados, pueden presentarse diversos escenarios, entre ellos, casos por equipos no entregados.\n\nUna vez analizado el caso y determinada su procedencia, para tramitar la aplicación del ajuste correspondiente a la cuota inicial facturada en RR, es indispensable que el crédito en ASCARD se encuentre en el siguiente estado:",
+    "answers": [
+      {
+        "text": "Reverso total del crédito.",
+        "correct": true
+      },
+      {
+        "text": "Normal.",
+        "correct": false
+      },
+      {
+        "text": "En mora.",
+        "correct": false
+      },
+      {
+        "text": "En castigo.",
+        "correct": false
       }
-    });
-  </script>
-</body>
-</html>
+    ]
+  },
+  {
+    "id": 11,
+    "question": "Diego, analista de PQR hogar, está validando en RR una OT de activación del servicio MAX para determinar qué tipo de soporte solicitar y así dar trámite a una PQR presentada por uno de nuestros clientes donde afirma que no ha solicitado dicho servicio. Diego ha identificado que la OT de activación incluye un usuario de un asesor activo y fue completada con un código de vendedor distinto al 9999.\n\nCon base en esta información, ¿qué tipo de soporte debe solicitar Diego para proceder con la PQR?",
+    "answers": [
+      {
+        "text": "Contrato.",
+        "correct": true
+      },
+      {
+        "text": "Llamada del proceso de retención.",
+        "correct": false
+      },
+      {
+        "text": "Llamada del proceso de fidelización.",
+        "correct": false
+      },
+      {
+        "text": "No requiere soporte, la activación fue autogestionable.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "question": "Laura, analista de PQR, está revisando una queja relacionada con una oferta de ventas. Al buscar el contrato del cliente en el Gestor Documental, descubre que no está registrado. Para resolver la situación, debe escalar el caso correctamente a través de correo electrónico, sin embargo, no recuerda que marcación debe dejar en el aplicativo de RR.\nTu como excelente consultor decides ayudar a Laura aportándole la respectiva información ¿Cuál es la marcación correcta que debe dejar Laura en el sistema de RR?",
+    "answers": [
+      {
+        "text": "SAC SGC (si es grabado) o SAC SCC (si es escrito) como subticket en la marcación principal, dejándolo abierto (P).",
+        "correct": true
+      },
+      {
+        "text": "SAC SGC (si es grabado) o SAC SGL (si es escrito) como subticket en la marcación principal, dejándolo abierto (P).",
+        "correct": false
+      },
+      {
+        "text": "SAC SGC (si es grabado) o SAC SCC (si es escrito) como subticket en la marcación principal, dejándolo cerrado (C).",
+        "correct": false
+      },
+      {
+        "text": "SAC SGL (si es grabado) o SAC SCC (si es escrito) como subticket en la marcación principal, dejándolo abierto (P).",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "question": "Estas revisando el caso de un cliente que está inconforme con el valor de su renta mensual. El cliente contrato y se instaló el servicio el 1 de enero de 2025 con una renta mensual de $100.000 IVA incluido, y se le ha cobrado esta cantidad hasta abril de 2025. Sin embargo, el cliente reclama que la renta mensual debería ser de $80.000 IVA incluido.\n\nUna vez has realizado la validación del caso, llegas a la conclusión que al cliente debes darle favorabilidad. Conforme a tus conocimientos, ¿cuál es el procedimiento correcto para otorgar la favorabilidad al cliente?",
+    "answers": [
+      {
+        "text": "Se debe solicitar la aplicación de un ajuste por diferencia de tarifas por valor de $80.000 IVA incluido por los meses ya facturados, adicional deben garantizar la renta mensual ofertada por los meses siguientes, ya sea solicitando un ajuste mes a mes por el tiempo restante o cambiando la tarifa (debe ser la de la PTAR al momento de la contratación del servicio).",
+        "correct": true
+      },
+      {
+        "text": "Se debe solicitar la aplicación de un ajuste por diferencia de tarifas por valor de $80.000 antes de IVA por los meses ya facturados, adicional deben garantizar la renta mensual ofertada por los meses siguientes, ya sea solicitando un ajuste mes a mes por el tiempo restante o cambiando la tarifa (debe ser la de la PTAR al momento de la contratación del servicio).",
+        "correct": false
+      },
+      {
+        "text": "Se debe solicitar un cambio de tarifa, de manera inmediata, recuerda que, si la tarifa al momento de cambiarla queda por encima de la renta ofrecida, acomódala a través de un ajuste mes a mes, pero si queda inferior a la renta reclamada, no es necesario garantizar ajustes por ningún motivo.",
+        "correct": false
+      },
+      {
+        "text": "Se debe solicitar la aplicación de un ajuste por diferencia de tarifas por valor de $80.000 IVA incluido por los meses ya facturados, adicional deben garantizar la renta mensual ofertada por los meses siguientes, ya sea solicitando un ajuste mes a mes por el tiempo restante o solicita la aplicación de una campaña de descuento que ayude a garantizar la renta del cliente.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "question": "Jair, cliente de Claro, ha presentado una PQR debido a su inconformidad con el valor de su factura. La respuesta recibida no fue satisfactoria para él. Ahora, Jair desea que su caso sea revisado nuevamente y que el ente de control intervenga en la gestión.\nTú, como experto consultor, ¿podrías indicarnos qué paso de la vía gubernativa debe seguir Jair?",
+    "answers": [
+      {
+        "text": "Debe radicar un recurso de reposición en subsidio de apelación.",
+        "correct": true
+      },
+      {
+        "text": "Debe radicar un derecho de petición en subsidio de apelación.",
+        "correct": false
+      },
+      {
+        "text": "Debe radicar un recurso único y después un recurso de apelación.",
+        "correct": false
+      },
+      {
+        "text": "Debe solicitar la aclaración de la respuesta por los canales de atención.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "question": "Los clientes de servicios de telecomunicaciones tienen el derecho de presentar reclamaciones formales ante la empresa cuando están inconformes. La empresa debe responder dentro de un plazo legal. Dos de las principales herramientas son el derecho de petición y el recurso de reposición con subsidio de apelación. Es importante entender las diferencias entre estos mecanismos para utilizarlos adecuadamente y obtener una resolución efectiva.\nTú, como experto consultor indica cual es la diferencia entre el derecho de petición y el recurso de reposición en subsidio de apelación.",
+    "answers": [
+      {
+        "text": "El derecho de petición permite a cualquier persona solicitar información, realizar quejas, o pedir acciones específicas a las autoridades, mientras que el recurso de reposición y en subsidio de apelación se interpone para solicitar la revisión de una decisión administrativa que no ha sido favorable. Si la entidad no revoca la decisión inicial, el caso se envía ante una instancia superior (SIC).",
+        "correct": true
+      },
+      {
+        "text": "El derecho de petición se interpone para solicitar la revisión de una decisión administrativa que no ha sido favorable. Si la entidad no revoca la decisión inicial, el caso se envía ante una instancia superior (SIC), mientras que el recurso de reposición y en subsidio de apelación permite a cualquier persona solicitar información, realizar quejas, o pedir acciones específicas a las autoridades.",
+        "correct": false
+      },
+      {
+        "text": "El derecho de petición permite a cualquier persona solicitar información, realizar quejas, o pedir acciones específicas a las autoridades, mientras que el recurso de reposición y en subsidio de apelación se interpone para solicitar la revisión de una decisión administrativa que no ha sido favorable únicamente al operador.",
+        "correct": false
+      },
+      {
+        "text": "El derecho de petición se interpone para solicitar la revisión de una decisión administrativa que no ha sido favorable únicamente al operador, mientras que el recurso de reposición y en subsidio de apelación permite a cualquier persona solicitar información, realizar quejas, o pedir acciones específicas a las autoridades.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "question": "Un cliente presentó una PQR en primera instancia por un caso de centrales de riesgo el cual no fue procedente y se le otorgaron los recursos de ley. Ahora, el cliente ha decidido hacer uso de estos recursos en segunda instancia solicitando intervención de la SIC.\n\nDesde el área de recursos han revisado el caso y este concluye en una no favorabilidad al cliente, ¿qué acción debe tomar el operador para manejar adecuadamente la situación?",
+    "answers": [
+      {
+        "text": "Al fallar como no procedente al cliente, se debe tramitar el expediente y trasladar el caso a la SIC.",
+        "correct": true
+      },
+      {
+        "text": "Se debe realizar una explicación completa y detallada del caso al cliente, con el fin de dar cierre al mismo, aclarando que los casos de centrales no tienen vía gubernativa.",
+        "correct": false
+      },
+      {
+        "text": "Se debe rechazar la solicitud y se cierra el caso sin mayor explicación. Sin embargo, en tu respuesta ofrécele una disculpa al cliente.",
+        "correct": false
+      },
+      {
+        "text": "Retipifica el caso como un derecho de petición y responde al cliente que el caso se revisara nuevamente desde cero.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "question": "Un cliente de Claro ha presentado una inconformidad debido a la activación de una segunda cuenta sin su autorización cuando lo que había solicitado era trasladar su servicio. Este tipo de situaciones se consideran casos de fraude comercial y requieren una atención especial para resolver la inconformidad del cliente. Andrés, quien está gestionando el caso, no recuerda cuál es la marcación correcta para realizar el escalamiento al área de “Gestión de fraudes”.\nTú, como experto consultor, ayudas a Andrés con su duda. ¿Qué información le brindas a Andrés para que haga un escalamiento correcto?",
+    "answers": [
+      {
+        "text": "Andres, la marcación correcta es RCL FMC al usuario ACUCAITA.",
+        "correct": true
+      },
+      {
+        "text": "Andres, la marcación correcta es RCL NAC al usuario ACUCAITA.",
+        "correct": false
+      },
+      {
+        "text": "Andres, la marcación correcta es RCL CPE al usuario ACUCAITA.",
+        "correct": false
+      },
+      {
+        "text": "Andres, la marcación correcta es RCL FMC al usuario FAGONZALEZ1.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "question": "Los casos de negación de contrato en PQR suponen un presunto fraude por suplantación de identidad. Para darles un trámite completo, estos deben ser radicados por los clientes en los CAV, adjuntando el formato respectivo para realizar el correspondiente escalamiento al área de \"Fraudes\".\nAl revisar el caso, evidencias que el área de gestión de fraudes ha actualizado una nota en F7 sobre la cuenta del cliente, con el título \"Negación Procedente\".\nComo experto analista, ¿cuáles son los pasos o escalamientos a seguir cuando un proceso de negación resulta favorable al cliente?",
+    "answers": [
+      {
+        "text": "Inicialmente debes solicitar un ajuste por la totalidad de los cobros efectuados, ya que la cuenta debe estar cancelada y sin saldos pendientes de pago, posterior, debes solicitar la eliminación del reporte en las centrales de riesgo.",
+        "correct": true
+      },
+      {
+        "text": "Inicialmente debes solicitar un ajuste por la totalidad de los cobros efectuados, ya que la cuenta debe estar cancelada y sin saldos pendientes de pago, posterior, debes solicitar la actualización del reporte en las centrales de riesgo.",
+        "correct": false
+      },
+      {
+        "text": "Inicialmente debes solicitar un ajuste por la totalidad de los cobros efectuados, ya que la cuenta debe estar cancelada y sin saldos pendientes de pago, posterior, debes solicitar la modificación del reporte en las centrales de riesgo.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "question": "Ya tienes elaborada la respuesta para un cliente, solo falta confirmar la dirección a la que debe remitirse. Al validar el soporte WEB, evidencias que el correo registrado es thomasjaramillo01@gmail.com. Sin embargo, también identificas que en RR, en la ventana de F8, existe un correo distinto: thomasjaramillo1991@hotmail.com.\n\n¿A cuál dirección debes enviar la respuesta?",
+    "answers": [
+      {
+        "text": "Se debe notificar la respuesta al correo thomasjaramillo01@gmail.com, dado que, sin importar si en RR se registra una información diferente, debe primar la información registrada en los soportes adjuntos del cliente.",
+        "correct": true
+      },
+      {
+        "text": "Se debe notificar la respuesta al correo thomasjaramillo1991@hotmail.com, dado que, sin importar si en el soporte WEB se registra una información, debe primar la información registrada en los sistemas de gestión como lo es RR.",
+        "correct": false
+      },
+      {
+        "text": "Se debe notificar la respuesta al correo thomasjaramillo01@gmail.com y al correo thomasjaramillo1991@hotmail.com, teniendo en cuenta que contamos con dos direcciones de correo diferentes.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "question": "Dentro de la vía gubernativa del cliente, existen diferentes instancias que componen el camino de una PQR.\nTú, como experto analista, indícanos que es un silencio administrativo positivo.",
+    "answers": [
+      {
+        "text": "Ocurre cuando una empresa de telecomunicaciones no responde a una solicitud o reclamo de un usuario dentro del plazo establecido. Si la empresa no responde a tiempo, se considera que la solicitud ha sido aceptada automáticamente.",
+        "correct": true
+      },
+      {
+        "text": "Permite a un usuario pedir que una autoridad superior revise una decisión tomada por la empresa de telecomunicaciones. Si un usuario no está de acuerdo con la respuesta de la empresa a su reclamo, puede apelar para que una entidad como la Superintendencia de Industria y Comercio revise y posiblemente cambie la decisión.",
+        "correct": false
+      },
+      {
+        "text": "Se presenta ante la misma entidad que emitió la decisión, con el fin de que esta la revoque, modifique o confirme sin elevar el caso al ente de control. El usuario debe decidir presentar este recurso directamente ante el operador.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "question": "Existen dos tipos de recursos legales disponibles para el cliente cuando no está conforme con la respuesta a una PQR: el recurso de reposición y el recurso de reposición en subsidio de apelación. Basado en tus conocimientos, ¿qué es un recurso de reposición y en subsidio de apelación?",
+    "answers": [
+      {
+        "text": "Permite a un usuario pedir que una autoridad superior revise una decisión tomada por la empresa de telecomunicaciones. Si un usuario no está de acuerdo con la respuesta de la empresa a su reclamo, puede apelar para que una entidad como la Superintendencia de Industria y Comercio revise y posiblemente cambie la decisión.",
+        "correct": true
+      },
+      {
+        "text": "Ocurre cuando una empresa de telecomunicaciones no responde a una solicitud o reclamo de un usuario dentro del plazo establecido. Si la empresa no responde a tiempo, se considera que la solicitud ha sido aceptada automáticamente.",
+        "correct": false
+      },
+      {
+        "text": "Se presenta ante la misma entidad que emitió la decisión, con el fin de que esta la revoque, modifique o confirme sin elevar el caso al ente de control. El usuario debe decidir presentar este recurso directamente ante el operador.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "question": "Existen dos tipos de recursos legales disponibles para el cliente cuando no está conforme con la respuesta a una PQR: el recurso de reposición y el recurso de reposición en subsidio de apelación. Basado en tus conocimientos, ¿qué es un recurso de reposición (único)?",
+    "answers": [
+      {
+        "text": "Se presenta ante la misma entidad que emitió la decisión, con el fin de que esta la revoque, modifique o confirme sin elevar el caso al ente de control. El usuario debe decidir presentar este recurso directamente ante el operador.",
+        "correct": true
+      },
+      {
+        "text": "Permite a un usuario pedir que una autoridad superior revise una decisión tomada por la empresa de telecomunicaciones. Si un usuario no está de acuerdo con la respuesta de la empresa a su reclamo, puede apelar para que una entidad como la Superintendencia de Industria y Comercio revise y posiblemente cambie la decisión.",
+        "correct": false
+      },
+      {
+        "text": "Ocurre cuando una empresa de telecomunicaciones no responde a una solicitud o reclamo de un usuario dentro del plazo establecido. Si la empresa no responde a tiempo, se considera que la solicitud ha sido aceptada automáticamente.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "question": "Desde el aplicativo de RR se puede evidenciar la creación de un plan de pagos por concepto de compra de tecnología hogar (Ultra wifi, Deco Digital y Cámaras VT).\n\nAlejandra, analista de PQR, tiene una duda relacionada con los comandos que debe realizar desde la pantalla principal del suscriptor para visualizar el estado de un plan de pago de Ultra Wifi. \n\nTú, como experto analista, le indicas a Alejandra que el comando correspondiente es:",
+    "answers": [
+      {
+        "text": "Alejandra, debes digital el comando Shift F9 y luego el comando Shift F12.",
+        "correct": true
+      },
+      {
+        "text": "Alejandra, debes digital el comando Shift F9 y luego el comando Shift F6.",
+        "correct": false
+      },
+      {
+        "text": "Alejandra, debes digital el comando Shift F12 y luego el comando Shift F12.",
+        "correct": false
+      },
+      {
+        "text": "Alejandra, debes digital el comando Shift F13 y luego el comando Shift F10.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "question": "Desde el aplicativo de RR se puede evidenciar la creación de un plan de pagos por concepto de compra de tecnología hogar (Ultra wifi, Deco Digital y Cámaras VT).\n\nAlejandra, analista de PQR, tiene una duda relacionada con la información del estado de un plan de pago de Ultra Wifi ya que no logra identificar cuando un plan de pagos esta activo. \n\nTú, como experto analista, le indicas a Alejandra que el estado de un plan de pagos “Activo” es:",
+    "answers": [
+      {
+        "text": "A",
+        "correct": true
+      },
+      {
+        "text": "P",
+        "correct": false
+      },
+      {
+        "text": "D",
+        "correct": false
+      },
+      {
+        "text": "C",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "question": "Se conoce como preaviso al tiempo hábil estipulado para solicitar un proceso de cancelación de uno o más servicios tanto en el segmento fijo como en el segmento móvil.\n \nLos servicios de televisión, telefonía e internet se deben cancelar de manera inmediata, desde el día en que el cliente genera la solicitud de cancelación. \n\nLa afirmación anterior es:",
+    "answers": [
+      {
+        "text": "Falso.",
+        "correct": true
+      },
+      {
+        "text": "Verdadero.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "question": "Estas revisando la PQR de un cliente que está inconforme con el cobro de su factura, afirmando que ha presentado fallas en el servicio y que ese tiempo no debe ser cobrado; durante el proceso de revisión, evidencias que la cliente se comunicó el 26 de marzo de 2025 por fallas en su servicio de internet y le programaron una visita para el día 28 de marzo de 2025 siendo esta llamada de servicio cerrada con código S13 (Visita cancelada por el cliente); para 30 de marzo de 2025, nuevamente existe una contactabilidad por parte del cliente reportando fallas en su servicio de internet, al revisar las notas del Log de llamadas, evidencias que existe un número de incidencia y al validar en las bases de avisos este número, la falla ya fue resuelta el 15 de abril de 2025.\n\nConforme a lo anterior, ¿cuántos días deben ser compensados al cliente por la falla en su servicio de internet?",
+    "answers": [
+      {
+        "text": "16",
+        "correct": true
+      },
+      {
+        "text": "17",
+        "correct": false
+      },
+      {
+        "text": "18",
+        "correct": false
+      },
+      {
+        "text": "19",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "question": "Los clientes pueden solicitar ajustes por demora en el traslado de servicios cuando este no se realiza dentro de los tiempos establecidos por razones atribuibles a la compañía. Estas solicitudes deben realizarse conforme a las políticas de ajustes vigentes.\nJaime, uno de nuestros clientes, interpuso una PQR por su inconformidad con la demora en el traslado de sus servicios. Él solicitó el traslado el 05/01/2025, y al validar en RR, se observó que el traslado se completó el 15/01/2025 debido a que el HHPP estaba ocupado.",
+    "answers": [
+      {
+        "text": "Deben ser ajustados 11 días.",
+        "correct": true
+      },
+      {
+        "text": "Deben ser ajustados 10 días.",
+        "correct": false
+      },
+      {
+        "text": "Deben ser ajustados 9 días.",
+        "correct": false
+      },
+      {
+        "text": "No aplica ajustes, el HHPP ocupado no es atribuible a la compañía.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "question": "Los clientes pueden solicitar ajustes por demora en el traslado de servicios cuando este no se realiza dentro de los tiempos establecidos por razones atribuibles a la compañía. Estas solicitudes deben realizarse conforme a las políticas de ajustes vigentes.\nTú como experto analista, indícanos ¿cuáles son las razones atribuibles a la compañía para la aplicación de ajustes?",
+    "answers": [
+      {
+        "text": "HHPP ocupado, TAP copado, incumplimiento del aliado.",
+        "correct": true
+      },
+      {
+        "text": "HHPP ocupado, TAP copado, visita cancelada por el cliente.",
+        "correct": false
+      },
+      {
+        "text": "Cliente con mora, TAP copado, incumplimiento del aliado.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "question": "Tatiana titular de una cuenta de hogar, ha radicado una PQR en la cual dice lo siguiente: “Estoy inconforme con el valor de mi factura, ya que me indicaron que tendría 2 meses gratis y me han generado un cobro, por lo que necesito la copia de mi contrato, además no me parece justo porque tuve fallas; necesito que corrijan el error porque por llamada solo me colgaron”.\nConforme a lo anterior, cuantas pretensiones registran:",
+    "answers": [
+      {
+        "text": "4",
+        "correct": true
+      },
+      {
+        "text": "3",
+        "correct": false
+      },
+      {
+        "text": "2",
+        "correct": false
+      },
+      {
+        "text": "5",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "question": "Dentro de la gerencia de PQR existen áreas que atienden procesos específicos, se deben identificar estás áreas, ya que algunos casos deben ser enviados a un área específica.\n\nMiguel titular de una cuenta con Claro, se encuentra reclamando por cobros de llamadas de larga distancia internacional el cual firma no ha realizado, negando rotundamente haber hecho esas llamadas.\n\nCon base a tus conocimientos, ¿Qué segmento interno del área debería darle gestión al caso?",
+    "answers": [
+      {
+        "text": "Operadores.",
+        "correct": true
+      },
+      {
+        "text": "Negaciones.",
+        "correct": false
+      },
+      {
+        "text": "Verbales.",
+        "correct": false
+      },
+      {
+        "text": "Escritas.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "question": "Las pretensiones de los clientes deben ser resueltas de manera puntual y de fondo, ya que si se omiten las mismas se puede incurrir en un SAP (silencio administrativo positivo).\n\nUn cliente ha radicado una PQR solicitando la cancelación del servicio, ya que afirma que ha presentado fallas en el servicio.\nConforme a tus conocimientos, ¿Cuál es el proceso de escalamiento para la solicitud de cancelación y cuantas pretensiones deben ser atendidas?",
+    "answers": [
+      {
+        "text": "Inicialmente, debes marcar la cuenta con el subticket CAN SCS. Luego, crea una nota en F7 con el título \"Cierre de la Experiencia\", especificando la fecha de cancelación de la cuenta. Una vez tengas todo listo para realizar la carta, debes atender dos pretensiones.",
+        "correct": true
+      },
+      {
+        "text": "Inicialmente, debes marcar la cuenta con el subticket CAN SCS. Luego, crea una nota en F7 con el título \"Cierre de la Experiencia\", especificando la fecha de cancelación de la cuenta. Una vez tengas todo listo para realizar la carta, debes atender una pretensión.",
+        "correct": false
+      },
+      {
+        "text": "Inicialmente, debes marcar la cuenta con el subticket CAN IPC. Luego, crea una nota en F7 con el título \"Cierre de la Experiencia\", especificando la fecha de cancelación de la cuenta. Una vez tengas todo listo para realizar la carta, debes atender dos pretensiones.",
+        "correct": false
+      },
+      {
+        "text": "Inicialmente, debes marcar la cuenta con el subticket CAN SCS. Luego, crea una nota en F7 con el título \"Cancelación\", especificando la fecha de cancelación de la cuenta. Una vez tengas todo listo para realizar la carta, debes atender dos pretensiones.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "question": "Un ciclo de corte en el segmento hogar es el tiempo de finalización de un periodo facturado, cada año contiene 12 periodos y son limitados por este. \n\n¿Cuántos y cuales son los ciclos de corte de facturación que se manejan en el segmento de hogar?",
+    "answers": [
+      {
+        "text": "Son 4 cortes: 1,2,3 y 17 de cada mes.",
+        "correct": true
+      },
+      {
+        "text": "Son 3 cortes: 1,2 y 3 de cada mes.",
+        "correct": false
+      },
+      {
+        "text": "Son 4 cortes: 1,2,3 y 15 de cada mes.",
+        "correct": false
+      },
+      {
+        "text": "Son 4 cortes: 1,2,3 y 4 de cada mes.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "question": "Dentro de la gerencia de PQR se gestionan los escalamientos para asegurar la solución de los casos presentados por los clientes, validando las condiciones de cada uno.\nAtiendes la reclamación de Cristian, titular de una cuenta de hogar, quien solicitó la cancelación de sus servicios hace más de dos meses y esta sigue activa. A la fecha, la cuenta tiene un aviso final por $200.000 IVA incluido correspondiente al valor de dos meses de facturación que no debían ser cobrados.\nConforme a tus conocimientos, ¿cuáles son los escalamientos a realizar para dar gestión al caso anterior?",
+    "answers": [
+      {
+        "text": "Inicialmente debes escalar la marcación CAN IPC, especificando en la carpeta de “Cierre de la experiencia” cancelación inmediata y el motivo de la cancelación, una vez cancelada la cuenta, debe solicitar el ajuste por valor de $200.000 IVA incluido a través de la marcación AJU PQR que corresponde al cobro adicional facturado.",
+        "correct": true
+      },
+      {
+        "text": "Inicialmente debes escalar la marcación CAN SCS, especificando en la carpeta de “Cierre de la experiencia” la fecha del siguiente corte y el motivo de la cancelación, una vez marcada la cuenta, debe solicitar el ajuste por valor de $200.000 IVA incluido a través de la marcación AJU PQR que corresponde al cobro adicional facturado.",
+        "correct": false
+      },
+      {
+        "text": "Inicialmente debes escalar la marcación CAN IPC, especificando en la carpeta de “Cierre de la experiencia” cancelación inmediata y el motivo de la cancelación, una vez cancelada la cuenta, debe solicitar el ajuste por valor de $200.000 IVA incluido a través de la marcación AJU CEC que corresponde al cobro adicional facturado.",
+        "correct": false
+      },
+      {
+        "text": "Inicialmente debes escalar la marcación CAN IPC, especificando en la carpeta de “Cierre de la experiencia” cancelación inmediata y el motivo de la cancelación, una vez cancelada la cuenta, debe solicitar el ajuste por valor de $200.000 antes de IVA a través de la marcación AJU PQR que corresponde al cobro adicional facturado.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "question": "Los clientes presentan sus PQR a través de peticiones, quejas, reclamos y recursos, cada uno con condiciones importantes que deben considerarse al gestionar el caso.\nAlexandra, formadora, informa a toda la operación que cualquier manifestación verbal o escrita de inconformidad del usuario relacionada con la facturación, la forma y condiciones en que se ha prestado o dejado de prestar el servicio, o la calidad en la atención al usuario, hace referencia a una ________:",
+    "answers": [
+      {
+        "text": "Queja.",
+        "correct": true
+      },
+      {
+        "text": "Petición.",
+        "correct": false
+      },
+      {
+        "text": "Recurso.",
+        "correct": false
+      },
+      {
+        "text": "Reclamo.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "question": "Los clientes pueden solicitar ajustes por desconexión tardía de servicios cuando esta no se ejecuta dentro de los tiempos establecidos por razones atribuibles a la compañía. Estas solicitudes deben realizarse conforme a las políticas de ajustes vigentes.\nEdna, cliente de un servicio hogar con corte 3, solicitó la cancelación del servicio el 20 de marzo de 2025. Sin embargo, la cuenta no fue cancelada hasta el 20 de abril de 2025 debido a un proceso de PQR.\nTeniendo en cuenta la información anterior, ¿cuántos días deben ser ajustados al cliente por la desconexión tardía?",
+    "answers": [
+      {
+        "text": "Deben ser ajustados 17 días.",
+        "correct": true
+      },
+      {
+        "text": "Deben ser ajustados 18 días.",
+        "correct": false
+      },
+      {
+        "text": "Deben ser ajustados 32 días.",
+        "correct": false
+      },
+      {
+        "text": "Deben ser ajustados 19 días.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "question": "Karen, analista de PQR, está solucionando una queja por demora en el traslado de servicios. Al revisar el caso detalladamente, encuentra la siguiente información: el cliente solicitó el traslado de sus servicios a una nueva dirección en otra ciudad el 05 de febrero de 2025. Para este proceso, se creó una orden de trabajo (OT) ese mismo día. Luego, el 10 de febrero de 2025, hay una nota en el Log de llamadas donde se le informa al cliente que en la nueva dirección no contamos con cobertura toda vez que el TAP está copado y que no es posible realizar el traslado de los servicios.\n\nConforme a lo anterior, ¿cuántos días de ajuste debería solicitar Karen para poder emitir una respuesta de fondo al suscriptor?",
+    "answers": [
+      {
+        "text": "Se debe solicitar ajustes del 5 de febrero al 10 de febrero de 2025.",
+        "correct": true
+      },
+      {
+        "text": "Se debe solicitar ajustes del 5 de febrero al 9 de febrero de 2025.",
+        "correct": false
+      },
+      {
+        "text": "Se debe solicitar ajustes desde el 5 de febrero a la fecha de cancelación.",
+        "correct": false
+      },
+      {
+        "text": "Se debe solicitar ajustes del 9 de febrero al 10 de febrero de 2025.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "question": "Los entes de control son organismos a los que la Constitución Política les confía funciones relacionadas con el control disciplinario, la defensa del pueblo y el control fiscal. No están adscritos ni vinculados a las ramas del poder público.\nCon base en lo anterior, podemos decir que la Comisión de Regulación de Comunicaciones (CRC) es la encargada de promover la competencia en los servicios de comunicaciones, asegurando que la prestación de estos servicios sea económicamente eficiente y refleje altos niveles de calidad. Además, define la información que los proveedores deben proporcionar sin costo a sus usuarios. La afirmación anterior es:",
+    "answers": [
+      {
+        "text": "Verdadero.",
+        "correct": true
+      },
+      {
+        "text": "Falso.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "question": "La notificación de la decisión de la PQR debe enviarse a la persona que la interpone, validando si es el titular de la cuenta, un tercero o un apoderado.\nSi se realiza una notificación errada, ya sea por nombre, dirección o por omisión de pretensiones, entre otras ¿Qué consecuencias traería estas situaciones para la compañía?",
+    "answers": [
+      {
+        "text": "Un Silencio Administrativo Positivo.",
+        "correct": true
+      },
+      {
+        "text": "Un recurso en subsidio de apelación.",
+        "correct": false
+      },
+      {
+        "text": "Un posible cliente reincidente.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "question": "El Código Único Numérico (CUN) es un número de identificación asignado a las peticiones, quejas, recursos (PQR) o solicitudes de indemnización presentadas por los usuarios de servicios de comunicaciones o postales. Este código permite a los usuarios hacer seguimiento y consultar el estado actualizado de su trámite en cualquier momento.\nConforme a tus conocimientos, de cuantos dígitos está conformado el CUN:",
+    "answers": [
+      {
+        "text": "16",
+        "correct": true
+      },
+      {
+        "text": "10",
+        "correct": false
+      },
+      {
+        "text": "17",
+        "correct": false
+      },
+      {
+        "text": "15",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "question": "Todo proceso de petición, queja y/o reclamo tiene un tiempo hábil de respuesta estipulado por ley. Si no se cumple este plazo, se incurre en un silencio administrativo positivo.\nCon base en lo anterior, indique los tiempos de respuesta estipulados por ley para los siguientes procesos:",
+    "answers": [
+      {
+        "text": "Todas las respuestas son correctas.",
+        "correct": true
+      },
+      {
+        "text": "PQR´s es de 15 días hábiles.",
+        "correct": false
+      },
+      {
+        "text": "Tutelas es de 24 horas hábiles.",
+        "correct": false
+      },
+      {
+        "text": "SAP es de 72 horas hábiles.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "question": "El Código Único Numérico o CUN, es un código de identificación que se asigna a las peticiones, quejas, recursos (PQRs) o solicitudes de indemnización (servicios postales) que usted presente ante los proveedores de servicios de comunicaciones o ante los operadores postales.\nTu como experto analista, nos indicas a que hacen referencia los últimos 10 dígitos del CUN:",
+    "answers": [
+      {
+        "text": "Corresponden al número de radicación de la solicitud.",
+        "correct": true
+      },
+      {
+        "text": "Corresponden al número de identificación del proveedor.",
+        "correct": false
+      },
+      {
+        "text": "Corresponden al número de año de radicación.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "question": "El Código Único Numérico o CUN, es un código de identificación que se asigna a las peticiones, quejas, recursos (PQRs) o solicitudes de indemnización (servicios postales) que usted presente ante los proveedores de servicios de comunicaciones o ante los operadores postales.\nTu como experto analista, nos indicas a que hacen referencia los primeros 4 dígitos del CUN:",
+    "answers": [
+      {
+        "text": "Corresponden al número de identificación del proveedor.",
+        "correct": true
+      },
+      {
+        "text": "Corresponden al número de radicación de la solicitud.",
+        "correct": false
+      },
+      {
+        "text": "Corresponden al número de año de radicación.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "question": "Para realizar un escalamiento referente a fallas de ingreso a una OTT, debemos realizar el escalamiento a través de la plataforma de “Mi asistencia 360”.\nTú como experto consultar, nos indicas el árbol que debemos seguir para asegurar un correcto escalamiento:",
+    "answers": [
+      {
+        "text": "Una vez ingreses a Mi Asistencia 360, dirígete al catálogo “Servicios para el Cliente de Claro”. Luego, selecciona el bloque “Soporte – Herramientas y Portales” y completa el formulario correspondiente según el requerimiento de tu caso.",
+        "correct": true
+      },
+      {
+        "text": "Una vez ingreses a Mi Asistencia 360, dirígete al catálogo “Servicios para el Cliente de Claro”. Luego, selecciona el bloque “Asesorías y solicitudes – Herramientas y Portales” y completa el formulario correspondiente según el requerimiento de tu caso.",
+        "correct": false
+      },
+      {
+        "text": "Una vez ingreses a Mi Asistencia 360, dirígete al catálogo “Servicios para el Cliente de Claro”. Luego, selecciona el bloque “Soporte – Servicios adicionales” y completa el formulario correspondiente según el requerimiento de tu caso.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "question": "En PQR, cuando hablamos de ajuste por mínima inconsistencia, nos referimos a inconvenientes relacionados con la transmisión de la información, la respuesta brindada o los parámetros de solución en una PQR.\n¿Cuáles de los siguientes escenarios se tienen en consideración para aplicar un ajuste por mínima inconsistencia?",
+    "answers": [
+      {
+        "text": "Respuestas erradas, planas, incompletas y superficiales, ajustes no materializados, falta de envió de carga probatoria o la inexistencia del mismo, errores de notificación, entre otros.",
+        "correct": true
+      },
+      {
+        "text": "Respuestas completas, con envío de carga probatoria, pretensiones contestadas punto a punto, guía de entrega confirmando la notificación al usuario, entre otros.",
+        "correct": false
+      },
+      {
+        "text": "Fallas en los servicios, intermitencias, cambios de servicios realizados por otras áreas, lentitud en internet, consultas realizadas en CAV.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "question": "Las respuestas escritas de las PQR para que este completas, deben contener en su estructura ciudad y fecha de respuesta, dirección de notificación, resumen de los hechos narrados por el cliente, respuesta a cada una de las pretensiones del cliente, recursos que proceden para todos los casos y el término para interponerlos.\n\nCon base en tus conocimientos, la anterior afirmación es:",
+    "answers": [
+      {
+        "text": "Falso.",
+        "correct": true
+      },
+      {
+        "text": "Verdadero.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "question": "Antonio, un cliente del servicio hogar, ha radicado una PQR por una promoción del 30% de descuento no aplicada. Al revisar el caso, evidencias que el ofrecimiento se realizó desde el área de retención; sin embargo, no cuentas con la llamada para validar si la información del cliente es veraz.\nComo analista experto, ¿cuál es la manera correcta de dar atención al caso de Antonio?",
+    "answers": [
+      {
+        "text": "Debes solicitar un ajuste el cobro realizado de más por el tiempo ya facturado con la marcación AJU PQR (masivo) AJU AEC (recursos). Posteriormente, debes solicitar la aplicación de una campaña correctiva con la marcación CAN CRC y detallar el tiempo y el porcentaje en una nota en F7 titulada “Cierre de la experiencia”.",
+        "correct": true
+      },
+      {
+        "text": "Debes solicitar un ajuste el cobro realizado de más por el tiempo ya facturado con la marcación AJU AEC (masivo) AJU PQR (recursos). Posteriormente, debes solicitar la aplicación de una campaña correctiva con la marcación CAN CRC y detallar el tiempo y el porcentaje en una nota en F7 titulada “Cierre de la experiencia”.",
+        "correct": false
+      },
+      {
+        "text": "Debes solicitar un ajuste el cobro realizado de más por el tiempo ya facturado con la marcación AJU PQR (masivo) AJU AEC (recursos). Posteriormente, debes solicitar la aplicación de una campaña correctiva con la marcación CAN IPC y detallar el tiempo y el porcentaje en una nota en F7 titulada “Cierre de la experiencia”.",
+        "correct": false
+      },
+      {
+        "text": "Debes solicitar un ajuste el cobro realizado de más por el tiempo ya facturado con la marcación AJU PQR (masivo) AJU AEC (recursos). Posteriormente, debes solicitar la aplicación de una campaña correctiva con la marcación CAN CRC y detallar el tiempo y el porcentaje en una nota en F7 titulada “Campañas y ajustes”.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "question": "Desde el área de PQR contamos con diversos aplicativos que nos ayudan en nuestra gestión diaria, cada uno de ellos cumple una función crucial a la hora de buscar la información que necesitamos para dar respuestas de fondo a nuestros clientes.\nTeniendo en cuenta lo anterior, indica el nombre del aplicativo utilizado para validar los financiamientos de los equipos de tecnología adquiridos por un cliente.",
+    "answers": [
+      {
+        "text": "Ascard.",
+        "correct": true
+      },
+      {
+        "text": "Paradigma.",
+        "correct": false
+      },
+      {
+        "text": "Gestor Documental.",
+        "correct": false
+      },
+      {
+        "text": "Novedat",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "question": "Existen dos tipos de recursos de ley a los cuales puede acceder el cliente cuando no está de acuerdo la respuesta a una PQR, estos son: Recurso de reposición y recurso de reposición en subsidio de apelación. \n\nCon los conocimientos adquiridos ayúdame a identificar ¿A cuáles de los siguientes escenarios no se le otorga vía gubernativa (asignación de recursos)?",
+    "answers": [
+      {
+        "text": "Centrales de riesgo, daños a terceros, equipos de tecnología, revista 15 minutos, entre otros.",
+        "correct": true
+      },
+      {
+        "text": "Fallas en los ultra Wifi, cobros de llamadas a móvil, T resuelve, Netflix, entre otros.",
+        "correct": false
+      },
+      {
+        "text": "Inconformidad con fallas en el servicio, fallas en el paquete de HBO, cobros de reconexión.",
+        "correct": false
+      },
+      {
+        "text": "Ninguna de las anteriores.",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "question": "Desde PQR se toman las decisiones de los casos con base en los soportes suministrados por las áreas encargadas o los soportes enviados por los clientes. Por lo tanto, se debe ser muy crítico al momento de analizarlos.\nCuando se genera la negación (no favorabilidad) de una PQR al cliente, es obligatorio realizar el envío de la carga probatoria en caso de que se adjunte copia de la cédula de ciudadanía (CC). Si no se adjunta copia del documento o si el reclamante es un tercero, igualmente debo consultar la carga probatoria, aunque no pueda ser enviada. En caso de no contar con dichos soportes o de no haberlos solicitado, se debe dar favorabilidad por falta de material probatorio.\nLa siguiente afirmación es:",
+    "answers": [
+      {
+        "text": "Correcta.",
+        "correct": true
+      },
+      {
+        "text": "Incorrecta.",
+        "correct": false
+      }
+    ]
+  }
+]
