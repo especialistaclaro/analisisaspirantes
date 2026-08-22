@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-  <!-- Canvas Confetti para Fuegos Pirotécnicos -->
+  <!-- Canvas Confetti para Efectos de Fuegos Artificiales -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
@@ -230,6 +230,35 @@
     .rank-1 { background: #e21b3c; }
     .rank-2 { background: #1368ce; }
     .rank-3 { background: #d89e00; }
+
+    .btn-delete-row {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-delete-row:hover {
+      background: #b91c1c;
+    }
+
+    /* Pie de Página / Créditos */
+    .footer-credits {
+      margin-top: 20px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .footer-credits strong {
+      color: #fbbf24;
+      font-weight: 700;
+    }
     
     @media print {
       body { background: white; padding: 0; }
@@ -250,7 +279,7 @@
   <!-- 1. Pantalla de Registro -->
   <div id="screen-register" class="card">
     <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 8px;">Evaluación de Aspirantes PQR</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos para iniciar la prueba. Son <strong>25 preguntas</strong> (cada respuesta correcta otorga <strong>4 pts</strong> para un total de <strong>100 pts</strong>).</p>
+    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos para iniciar la prueba. Son <strong>25 preguntas</strong> (cada acierto otorga <strong>4 pts</strong> para un total de <strong>100 pts</strong>).</p>
     
     <div class="form-group">
       <label for="fullName">Nombre Completo:</label>
@@ -284,7 +313,7 @@
     <div class="question-box" id="question-text"></div>
     <div class="answers-grid" id="answers-container"></div>
 
-    <!-- Capa Dinámica de Feedback Visual (Correcto / Incorrecto) -->
+    <!-- Capa Dinámica de Feedback Visual -->
     <div id="feedback-modal" class="feedback-overlay hidden">
       <div class="feedback-emoji" id="feedback-emoji">🎉</div>
       <div class="feedback-title" id="feedback-title">¡CORRECTO!</div>
@@ -332,7 +361,7 @@
   <!-- 4. Pestaña de Ranking y Podio Estilo Kahoot -->
   <div id="screen-ranking" class="card hidden">
     <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 5px;">🏆 Tabla de Clasificación & Ranking</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 15px;">Puntajes en tiempo real sincronizados desde Firebase Firestore.</p>
+    <p style="text-align: center; color: #666; margin-bottom: 15px;" id="ranking-subtitle">Puntajes en tiempo real sincronizados desde Firebase Firestore.</p>
 
     <!-- Podio Top 3 -->
     <div class="podium-container" id="podium-section">
@@ -353,11 +382,11 @@
       </div>
     </div>
 
-    <!-- Tabla de Todos los Participantes -->
-    <div style="max-height: 280px; overflow-y: auto;">
+    <!-- Tabla de Clasificación -->
+    <div style="max-height: 320px; overflow-y: auto;">
       <table class="leaderboard-table">
         <thead>
-          <tr>
+          <tr id="ranking-header-row">
             <th style="width: 50px;">Pos</th>
             <th>Aspirante</th>
             <th style="text-align: center;">Aciertos</th>
@@ -372,6 +401,11 @@
 
     <button class="btn-main" style="margin-top: 20px; background: #64748b;" onclick="showQuizTab()">Volver al Inicio</button>
   </div>
+
+  <!-- Créditos de Autoría -->
+  <footer class="footer-credits no-print">
+    Desarrollado y Diseñado por <strong>Ing. Edison Aguilar</strong>
+  </footer>
 
   <script>
     // 1. Configuración de Firebase
@@ -388,7 +422,54 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. Carga dinámica de preguntas desde preguntas.json
+    // 2. Motor de Audio Web (Sonidos alegres y dinámicos)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'correct') {
+        // Melodía triunfal alegre de victoria (Arpegio ascendente estilo videojuego)
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+
+          gain.gain.setValueAtTime(0.18, now + (idx * 0.08));
+          gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.25);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now + (idx * 0.08));
+          osc.stop(now + (idx * 0.08) + 0.25);
+        });
+      } else if (type === 'wrong') {
+        // Sonido de fallo suave
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    // 3. Carga dinámica de preguntas desde preguntas.json
     let fullBank = [];
     fetch('preguntas.json')
       .then(res => res.json())
@@ -397,16 +478,16 @@
 
     let quizQuestions = [];
     const TOTAL_QUIZ_QUESTIONS = 25;
-    const POINTS_PER_CORRECT = 4; // 25 preguntas x 4 pts = 100 pts total
+    const POINTS_PER_CORRECT = 4; // 25 preguntas x 4 pts = 100 pts
     let currentQuestionIndex = 0;
     let score = 0;
     let correctCount = 0;
     let wrongCount = 0;
     let userData = {};
     let isAnswering = false;
+    let adminModeActive = false; // Modo Administrador Oculto
     const shapes = ['▲', '◆', '●', '■'];
 
-    // Algoritmo de aleatoriedad profunda (Fisher-Yates)
     function shuffleArray(array) {
       const arr = array.map(item => ({ ...item }));
       for (let i = arr.length - 1; i > 0; i--) {
@@ -435,14 +516,14 @@
       btnStart.disabled = true;
       btnStart.innerText = "Verificando registro...";
 
-      // Validación de intento único por documento
+      // Validación de intento único en Firebase
       try {
         const queryCheck = await db.collection("evaluaciones_aspirantes")
                                    .where("numeroDocumento", "==", docNum)
                                    .get();
 
         if (!queryCheck.empty) {
-          alert(`El documento ${docNum} ya cuenta con una evaluación registrada. No se permite realizar más de un intento.`);
+          alert(`El documento ${docNum} ya cuenta con una evaluación registrada en el sistema. No se permite realizar más de un intento.`);
           btnStart.disabled = false;
           btnStart.innerText = "Comenzar Evaluación";
           return;
@@ -456,7 +537,7 @@
 
       userData = { name, docType, docNum };
 
-      // Selección aleatoria e independiente de 25 preguntas
+      // Selección aleatoria independiente de 25 preguntas
       const shuffledBank = shuffleArray(fullBank);
       quizQuestions = shuffledBank.slice(0, TOTAL_QUIZ_QUESTIONS);
 
@@ -484,7 +565,6 @@
       const container = document.getElementById('answers-container');
       container.innerHTML = '';
 
-      // Barajar aleatoriamente las 4 opciones de respuesta
       const shuffledAnswers = shuffleArray(q.answers);
 
       shuffledAnswers.forEach((ans, index) => {
@@ -497,7 +577,6 @@
     }
 
     function triggerFireworks() {
-      // Efecto de fuegos artificiales estilo confeti múltiple
       confetti({
         particleCount: 80,
         spread: 70,
@@ -534,6 +613,7 @@
         score += POINTS_PER_CORRECT;
         correctCount++;
         
+        playSound('correct');
         modal.classList.add('feedback-correct');
         emojiEl.innerText = "🎉🥳🚀";
         titleEl.innerText = "¡RESPUESTA CORRECTA!";
@@ -543,15 +623,15 @@
       } else {
         wrongCount++;
         
+        playSound('wrong');
         modal.classList.add('feedback-wrong');
         emojiEl.innerText = "😭💔❌";
         titleEl.innerText = "¡RESPUESTA INCORRECTA!";
-        subEl.innerText = "¡No te rindas, sigamos con la siguiente!";
+        subEl.innerText = "¡Ánimo! Vamos con la siguiente";
       }
 
       document.getElementById('score-display').innerText = `Puntaje: ${score} / 100`;
 
-      // Pausa de 1.8 segundos para mostrar la animación antes de la siguiente pregunta
       setTimeout(() => {
         currentQuestionIndex++;
         if (currentQuestionIndex < quizQuestions.length) {
@@ -593,7 +673,6 @@
       document.getElementById('res-wrong').innerText = wrongCount;
       document.getElementById('res-score').innerText = `${score} / 100`;
 
-      // Si aprueba con más de 70 puntos, lanza gran celebración final
       if (score >= 70) {
         triggerFireworks();
       }
@@ -601,11 +680,35 @@
       guardarEnFirestore();
     }
 
-    // 3. Funciones del Ranking y Podio en Tiempo Real
+    // 4. Funciones del Ranking y Podio en Tiempo Real
     async function loadRanking() {
       const tbody = document.getElementById('ranking-tbody');
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">Cargando datos desde Firebase...</td></tr>';
+      const headerRow = document.getElementById('ranking-header-row');
+      const subtitle = document.getElementById('ranking-subtitle');
+
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">Cargando datos desde Firebase...</td></tr>';
       
+      // Ajuste de columnas si está activo el modo Administrador Secreto
+      if (adminModeActive) {
+        headerRow.innerHTML = `
+          <th style="width: 40px;">Pos</th>
+          <th>Aspirante</th>
+          <th style="color:#ef4444;">Cédula / Doc</th>
+          <th style="text-align: center;">Aciertos</th>
+          <th style="text-align: right;">Puntaje</th>
+          <th style="text-align: center; color:#ef4444;">Acción</th>
+        `;
+        subtitle.innerHTML = "<span style='color:#ef4444; font-weight:bold;'>🔒 MODO ADMINISTRADOR ACTIVO: Visualizando números de cédula para gestión y eliminación.</span>";
+      } else {
+        headerRow.innerHTML = `
+          <th style="width: 50px;">Pos</th>
+          <th>Aspirante</th>
+          <th style="text-align: center;">Aciertos</th>
+          <th style="text-align: right;">Puntaje</th>
+        `;
+        subtitle.innerText = "Puntajes en tiempo real sincronizados desde Firebase Firestore.";
+      }
+
       try {
         const snapshot = await db.collection("evaluaciones_aspirantes")
                                  .orderBy("puntajeTotal", "desc")
@@ -613,7 +716,7 @@
                                  .get();
 
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">No hay evaluaciones registradas aún.</td></tr>';
+          tbody.innerHTML = `<tr><td colspan="${adminModeActive ? 6 : 4}" style="text-align:center; color:#888;">No hay evaluaciones registradas aún.</td></tr>`;
           document.getElementById('podium-name-1').innerText = '-';
           document.getElementById('podium-score-1').innerText = '0 pts';
           document.getElementById('podium-name-2').innerText = '-';
@@ -629,16 +732,32 @@
 
         snapshot.forEach(doc => {
           const data = doc.data();
+          const docId = doc.id;
           if (rank <= 3) top3.push(data);
 
           const tr = document.createElement('tr');
           const badgeClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-          tr.innerHTML = `
-            <td><span class="rank-tag ${badgeClass}">${rank}</span></td>
-            <td><strong>${data.nombre || 'Anónimo'}</strong></td>
-            <td style="text-align:center;">${data.aciertos || 0} / ${data.totalPreguntas || 25}</td>
-            <td style="text-align:right; font-weight:bold; color:var(--kahoot-purple);">${data.puntajeTotal || 0} pts</td>
-          `;
+          
+          if (adminModeActive) {
+            tr.innerHTML = `
+              <td><span class="rank-tag ${badgeClass}">${rank}</span></td>
+              <td><strong>${data.nombre || 'Anónimo'}</strong></td>
+              <td style="font-family:monospace; font-weight:bold; color:#1e293b;">${data.numeroDocumento || 'N/A'}</td>
+              <td style="text-align:center;">${data.aciertos || 0} / ${data.totalPreguntas || 25}</td>
+              <td style="text-align:right; font-weight:bold; color:var(--kahoot-purple);">${data.puntajeTotal || 0} pts</td>
+              <td style="text-align:center;">
+                <button class="btn-delete-row" onclick="deleteAttempt('${docId}', '${data.nombre}', '${data.numeroDocumento}')">🗑️ Eliminar</button>
+              </td>
+            `;
+          } else {
+            tr.innerHTML = `
+              <td><span class="rank-tag ${badgeClass}">${rank}</span></td>
+              <td><strong>${data.nombre || 'Anónimo'}</strong></td>
+              <td style="text-align:center;">${data.aciertos || 0} / ${data.totalPreguntas || 25}</td>
+              <td style="text-align:right; font-weight:bold; color:var(--kahoot-purple);">${data.puntajeTotal || 0} pts</td>
+            `;
+          }
+
           tbody.appendChild(tr);
           rank++;
         });
@@ -654,7 +773,21 @@
 
       } catch (err) {
         console.error("Error al obtener ranking:", err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#b91c1c;">Error al conectar con la base de datos de Firebase.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${adminModeActive ? 6 : 4}" style="text-align:center; color:#b91c1c;">Error al conectar con la base de datos de Firebase.</td></tr>`;
+      }
+    }
+
+    async function deleteAttempt(docId, name, docNum) {
+      const confirmDelete = confirm(`¿Confirmas eliminar el intento de ${name} (C.C. ${docNum})? Esto le permitirá realizar la prueba nuevamente.`);
+      if (!confirmDelete) return;
+
+      try {
+        await db.collection("evaluaciones_aspirantes").doc(docId).delete();
+        alert("✓ Registro eliminado exitosamente de Firebase.");
+        loadRanking();
+      } catch (err) {
+        console.error("Error al eliminar documento:", err);
+        alert("Error al intentar eliminar el registro.");
       }
     }
 
@@ -673,45 +806,26 @@
       document.getElementById('screen-register').classList.remove('hidden');
     }
 
-    // 4. Comando Oculto para Administrador (Eliminar Intentos)
+    // 5. Comando Secreto para Administrador: Activa la columna de Cédulas y Botón Eliminar
     let typedAdminKeys = "";
-    document.addEventListener("keydown", async (e) => {
+    document.addEventListener("keydown", (e) => {
       typedAdminKeys += e.key.toLowerCase();
       if (typedAdminKeys.length > 3) {
         typedAdminKeys = typedAdminKeys.slice(-3);
       }
 
+      // Al escribir "del" o presionar "Alt + D" en la pestaña de Ranking
       if (typedAdminKeys === "del" || (e.altKey && e.key.toLowerCase() === "d")) {
         const rankingScreen = document.getElementById("screen-ranking");
         if (rankingScreen.classList.contains("hidden")) return;
 
-        const adminDoc = prompt("🔒 Modo Administrador:\nIngresa el número de documento del participante a eliminar:");
-        if (!adminDoc) return;
-
-        try {
-          const snapshot = await db.collection("evaluaciones_aspirantes")
-                                   .where("numeroDocumento", "==", adminDoc.trim())
-                                   .get();
-
-          if (snapshot.empty) {
-            alert(`No se encontró ningún registro con el documento: ${adminDoc}`);
-            return;
-          }
-
-          const confirmDelete = confirm(`¿Estás seguro de eliminar los registros del documento ${adminDoc}? Esto le permitirá presentar la prueba nuevamente.`);
-          if (confirmDelete) {
-            const batch = db.batch();
-            snapshot.forEach(doc => {
-              batch.delete(doc.ref);
-            });
-            await batch.commit();
-            alert("✓ Registro eliminado con éxito.");
-            loadRanking();
-          }
-        } catch (err) {
-          console.error("Error al eliminar documento:", err);
-          alert("Error al eliminar el registro.");
+        adminModeActive = !adminModeActive; // Alterna modo normal / modo admin
+        if (adminModeActive) {
+          alert("🔓 Modo Administrador Activado:\nAhora puedes ver las cédulas y eliminar cualquier intento directamente con el botón rojo.");
+        } else {
+          alert("🔒 Modo Administrador Desactivado.");
         }
+        loadRanking();
       }
     });
   </script>
