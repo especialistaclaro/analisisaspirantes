@@ -9,6 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+  <!-- Canvas Confetti para Fuegos Pirotécnicos -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
   <style>
     :root {
       --kahoot-red: #e21b3c;
@@ -28,6 +31,7 @@
       justify-content: center; 
       align-items: center; 
       padding: 20px; 
+      overflow-x: hidden;
     }
     .card { 
       background: white; 
@@ -94,6 +98,53 @@
     .ans-1 { background: var(--kahoot-blue); }
     .ans-2 { background: var(--kahoot-yellow); }
     .ans-3 { background: var(--kahoot-green); }
+
+    /* Modal de Feedback Visual Tras Cada Pregunta */
+    .feedback-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      z-index: 100;
+      animation: popFeedback 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popFeedback {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .feedback-correct {
+      background: rgba(38, 137, 12, 0.96);
+    }
+    .feedback-wrong {
+      background: rgba(226, 27, 60, 0.96);
+      animation: shakeScreen 0.4s ease-in-out;
+    }
+    @keyframes shakeScreen {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-12px); }
+      40%, 80% { transform: translateX(12px); }
+    }
+    .feedback-emoji {
+      font-size: 90px;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 8px 15px rgba(0,0,0,0.3));
+    }
+    .feedback-title {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .feedback-subtitle {
+      font-size: 18px;
+      font-weight: 600;
+      opacity: 0.95;
+    }
 
     /* Resultados y Certificación */
     .certificate-container { background: #fff; border: 8px double #1368ce; border-radius: 12px; padding: 35px 25px; text-align: center; }
@@ -199,7 +250,7 @@
   <!-- 1. Pantalla de Registro -->
   <div id="screen-register" class="card">
     <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 8px;">Evaluación de Aspirantes PQR</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos personales para iniciar la prueba. Se seleccionarán <strong>25 preguntas aleatorias</strong>.</p>
+    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos para iniciar la prueba. Son <strong>25 preguntas</strong> (cada respuesta correcta otorga <strong>4 pts</strong> para un total de <strong>100 pts</strong>).</p>
     
     <div class="form-group">
       <label for="fullName">Nombre Completo:</label>
@@ -228,10 +279,17 @@
   <div id="screen-quiz" class="card hidden">
     <div class="quiz-header">
       <span class="badge" id="question-progress">Pregunta 1 de 25</span>
-      <span class="badge" id="score-display">Puntaje: 0 pts</span>
+      <span class="badge" id="score-display">Puntaje: 0 / 100</span>
     </div>
     <div class="question-box" id="question-text"></div>
     <div class="answers-grid" id="answers-container"></div>
+
+    <!-- Capa Dinámica de Feedback Visual (Correcto / Incorrecto) -->
+    <div id="feedback-modal" class="feedback-overlay hidden">
+      <div class="feedback-emoji" id="feedback-emoji">🎉</div>
+      <div class="feedback-title" id="feedback-title">¡CORRECTO!</div>
+      <div class="feedback-subtitle" id="feedback-subtitle">+4 Puntos</div>
+    </div>
   </div>
 
   <!-- 3. Pantalla de Resultados y Certificado -->
@@ -257,8 +315,8 @@
           <span class="stat-label">Errores</span>
         </div>
         <div class="stat-box stat-score">
-          <span class="stat-value" id="res-percent">0%</span>
-          <span class="stat-label">Aprobación</span>
+          <span class="stat-value" id="res-score">0 / 100</span>
+          <span class="stat-label">Puntaje Final</span>
         </div>
       </div>
 
@@ -339,11 +397,13 @@
 
     let quizQuestions = [];
     const TOTAL_QUIZ_QUESTIONS = 25;
+    const POINTS_PER_CORRECT = 4; // 25 preguntas x 4 pts = 100 pts total
     let currentQuestionIndex = 0;
     let score = 0;
     let correctCount = 0;
     let wrongCount = 0;
     let userData = {};
+    let isAnswering = false;
     const shapes = ['▲', '◆', '●', '■'];
 
     // Algoritmo de aleatoriedad profunda (Fisher-Yates)
@@ -375,14 +435,14 @@
       btnStart.disabled = true;
       btnStart.innerText = "Verificando registro...";
 
-      // Validación de intento único por número de documento en Firebase
+      // Validación de intento único por documento
       try {
         const queryCheck = await db.collection("evaluaciones_aspirantes")
                                    .where("numeroDocumento", "==", docNum)
                                    .get();
 
         if (!queryCheck.empty) {
-          alert(`El documento ${docNum} ya cuenta con una evaluación registrada en el sistema. No se permite realizar más de un intento.`);
+          alert(`El documento ${docNum} ya cuenta con una evaluación registrada. No se permite realizar más de un intento.`);
           btnStart.disabled = false;
           btnStart.innerText = "Comenzar Evaluación";
           return;
@@ -396,7 +456,7 @@
 
       userData = { name, docType, docNum };
 
-      // Selección estrictamente aleatoria de 25 preguntas
+      // Selección aleatoria e independiente de 25 preguntas
       const shuffledBank = shuffleArray(fullBank);
       quizQuestions = shuffledBank.slice(0, TOTAL_QUIZ_QUESTIONS);
 
@@ -404,6 +464,7 @@
       score = 0;
       correctCount = 0;
       wrongCount = 0;
+      isAnswering = false;
 
       document.getElementById('screen-register').classList.add('hidden');
       document.getElementById('screen-ranking').classList.add('hidden');
@@ -412,46 +473,98 @@
     }
 
     function loadQuestion() {
+      isAnswering = false;
+      document.getElementById('feedback-modal').classList.add('hidden');
+
       const q = quizQuestions[currentQuestionIndex];
       document.getElementById('question-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${quizQuestions.length}`;
-      document.getElementById('score-display').innerText = `Puntaje: ${score} pts`;
+      document.getElementById('score-display').innerText = `Puntaje: ${score} / 100`;
       document.getElementById('question-text').innerText = q.question;
 
       const container = document.getElementById('answers-container');
       container.innerHTML = '';
 
-      // Barajar aleatoriamente las opciones de respuesta
+      // Barajar aleatoriamente las 4 opciones de respuesta
       const shuffledAnswers = shuffleArray(q.answers);
 
       shuffledAnswers.forEach((ans, index) => {
         const btn = document.createElement('button');
         btn.className = `answer-btn ans-${index % 4}`;
         btn.innerHTML = `<span class="shape-icon">${shapes[index % 4]}</span> <span>${ans.text}</span>`;
-        btn.onclick = () => selectAnswer(ans.correct);
+        btn.onclick = () => handleAnswer(ans.correct);
         container.appendChild(btn);
       });
     }
 
-    function selectAnswer(isCorrect) {
+    function triggerFireworks() {
+      // Efecto de fuegos artificiales estilo confeti múltiple
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      setTimeout(() => {
+        confetti({
+          particleCount: 60,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 60,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+      }, 150);
+    }
+
+    function handleAnswer(isCorrect) {
+      if (isAnswering) return;
+      isAnswering = true;
+
+      const modal = document.getElementById('feedback-modal');
+      const emojiEl = document.getElementById('feedback-emoji');
+      const titleEl = document.getElementById('feedback-title');
+      const subEl = document.getElementById('feedback-subtitle');
+
+      modal.classList.remove('hidden', 'feedback-correct', 'feedback-wrong');
+
       if (isCorrect) {
-        score += 100;
+        score += POINTS_PER_CORRECT;
         correctCount++;
+        
+        modal.classList.add('feedback-correct');
+        emojiEl.innerText = "🎉🥳🚀";
+        titleEl.innerText = "¡RESPUESTA CORRECTA!";
+        subEl.innerText = `+${POINTS_PER_CORRECT} Puntos acumulados`;
+        
+        triggerFireworks();
       } else {
         wrongCount++;
+        
+        modal.classList.add('feedback-wrong');
+        emojiEl.innerText = "😭💔❌";
+        titleEl.innerText = "¡RESPUESTA INCORRECTA!";
+        subEl.innerText = "¡No te rindas, sigamos con la siguiente!";
       }
 
-      currentQuestionIndex++;
-      if (currentQuestionIndex < quizQuestions.length) {
-        loadQuestion();
-      } else {
-        showResults();
-      }
+      document.getElementById('score-display').innerText = `Puntaje: ${score} / 100`;
+
+      // Pausa de 1.8 segundos para mostrar la animación antes de la siguiente pregunta
+      setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizQuestions.length) {
+          loadQuestion();
+        } else {
+          showResults();
+        }
+      }, 1800);
     }
 
     async function guardarEnFirestore() {
       const statusEl = document.getElementById('db-status-msg');
       try {
-        const approvalRate = Math.round((correctCount / quizQuestions.length) * 100);
         await db.collection("evaluaciones_aspirantes").add({
           nombre: userData.name,
           tipoDocumento: userData.docType,
@@ -460,7 +573,6 @@
           errores: wrongCount,
           totalPreguntas: quizQuestions.length,
           puntajeTotal: score,
-          porcentajeAprobacion: approvalRate + "%",
           fechaRegistro: new Date().toISOString()
         });
         if (statusEl) statusEl.innerText = "✓ Registro guardado exitosamente en Firebase Firestore.";
@@ -479,8 +591,12 @@
 
       document.getElementById('res-correct').innerText = correctCount;
       document.getElementById('res-wrong').innerText = wrongCount;
-      const percent = Math.round((correctCount / quizQuestions.length) * 100);
-      document.getElementById('res-percent').innerText = `${percent}%`;
+      document.getElementById('res-score').innerText = `${score} / 100`;
+
+      // Si aprueba con más de 70 puntos, lanza gran celebración final
+      if (score >= 70) {
+        triggerFireworks();
+      }
 
       guardarEnFirestore();
     }
