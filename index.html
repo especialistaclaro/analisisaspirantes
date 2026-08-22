@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evaluación y Certificación PQR</title>
+  <title>Evaluación Técnica PQR - Aspirantes</title>
 
-  <!-- Firebase SDKs Compatibles para HTML puro -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -33,7 +33,7 @@
       border-radius: 16px; 
       padding: 30px; 
       width: 100%; 
-      max-width: 800px; 
+      max-width: 850px; 
       box-shadow: 0 12px 30px rgba(0,0,0,0.3); 
       animation: fadeIn 0.3s ease-in-out; 
     }
@@ -41,7 +41,7 @@
     
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      to {{ opacity: 1; transform: translateY(0); }
     }
 
     /* Formulario de Registro */
@@ -54,14 +54,14 @@
 
     /* Interfaz de Pregunta estilo Kahoot */
     .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; font-size: 18px; color: #555; }
-    .badge { background: #eef2ff; color: #1368ce; padding: 6px 14px; border-radius: 20px; font-size: 14px; }
-    .question-box { font-size: 18px; line-height: 1.5; font-weight: 600; text-align: left; margin-bottom: 25px; padding: 18px; background: #f8f9fa; border-left: 5px solid var(--kahoot-purple); border-radius: 6px; white-space: pre-line; }
+    .badge { background: #eef2ff; color: #1368ce; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+    .question-box { font-size: 17px; line-height: 1.5; font-weight: 600; text-align: left; margin-bottom: 25px; padding: 18px; background: #f8f9fa; border-left: 6px solid var(--kahoot-purple); border-radius: 6px; white-space: pre-line; }
     
     .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 600px) {
+    @media (max-width: 650px) {
       .answers-grid { grid-template-columns: 1fr; }
     }
-    .answer-btn { border: none; border-radius: 10px; color: white; padding: 20px 16px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: transform 0.1s, filter 0.2s; }
+    .answer-btn { border: none; border-radius: 10px; color: white; padding: 18px 14px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; transition: transform 0.1s, filter 0.2s; }
     .answer-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
     .answer-btn:active { transform: scale(0.98); }
     .shape-icon { font-size: 20px; font-weight: 900; }
@@ -70,15 +70,23 @@
     .ans-2 { background: var(--kahoot-yellow); }
     .ans-3 { background: var(--kahoot-green); }
 
-    /* Certificado */
-    .certificate-container { background: #fff; border: 10px double #1368ce; border-radius: 8px; padding: 40px 30px; text-align: center; }
-    .cert-badge { font-size: 48px; margin-bottom: 10px; }
-    .cert-title { font-size: 30px; color: #1368ce; letter-spacing: 2px; font-weight: 800; margin-bottom: 15px; }
-    .cert-name { font-size: 26px; font-weight: 800; color: #111; margin: 15px 0 5px; text-transform: uppercase; border-bottom: 2px solid #ccc; display: inline-block; padding-bottom: 4px; }
-    .cert-meta { color: #666; font-size: 16px; margin-bottom: 20px; }
-    .cert-body { font-size: 16px; line-height: 1.6; color: #444; max-width: 600px; margin: 0 auto 20px; }
-    .cert-score-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 18px; display: inline-block; margin-bottom: 25px; }
-    .db-status { font-size: 13px; color: #666; margin-top: 10px; }
+    /* Pantalla de Resultados y Certificación */
+    .certificate-container { background: #fff; border: 8px double #1368ce; border-radius: 12px; padding: 40px 25px; text-align: center; }
+    .cert-badge { font-size: 48px; margin-bottom: 8px; }
+    .cert-title { font-size: 28px; color: #1368ce; letter-spacing: 1px; font-weight: 800; margin-bottom: 12px; }
+    .cert-name { font-size: 24px; font-weight: 800; color: #111; margin: 10px 0 4px; text-transform: uppercase; border-bottom: 2px solid #ccc; display: inline-block; padding-bottom: 4px; }
+    .cert-meta { color: #666; font-size: 15px; margin-bottom: 15px; }
+    .cert-body { font-size: 15px; line-height: 1.6; color: #444; max-width: 620px; margin: 0 auto 20px; }
+    
+    .stats-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+    .stat-box { padding: 15px 25px; border-radius: 10px; font-weight: bold; min-width: 140px; text-align: center; }
+    .stat-correct { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .stat-wrong { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .stat-score { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
+    .stat-value { font-size: 24px; display: block; }
+    .stat-label { font-size: 13px; text-transform: uppercase; opacity: 0.9; }
+
+    .db-status { font-size: 14px; font-weight: 600; color: #1368ce; margin-top: 15px; }
     
     @media print {
       body { background: white; padding: 0; }
@@ -92,8 +100,8 @@
 
   <!-- 1. Pantalla de Registro -->
   <div id="screen-register" class="card">
-    <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 10px;">Capacitación Técnica PQR</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos para registrar tus respuestas y generar tu certificación.</p>
+    <h2 style="text-align: center; color: var(--kahoot-purple); margin-bottom: 8px;">Evaluación de Aspirantes PQR</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 25px;">Ingresa tus datos personales para iniciar la prueba. Se seleccionarán <strong>25 preguntas aleatorias</strong>.</p>
     
     <div class="form-group">
       <label for="fullName">Nombre Completo:</label>
@@ -121,30 +129,45 @@
   <!-- 2. Pantalla de Preguntas -->
   <div id="screen-quiz" class="card hidden">
     <div class="quiz-header">
-      <span class="badge" id="question-progress">Pregunta 1 de 49</span>
-      <span class="badge" id="score-display">Puntaje: 0</span>
+      <span class="badge" id="question-progress">Pregunta 1 de 25</span>
+      <span class="badge" id="score-display">Puntaje: 0 pts</span>
     </div>
     <div class="question-box" id="question-text"></div>
     <div class="answers-grid" id="answers-container"></div>
   </div>
 
-  <!-- 3. Pantalla de Certificado -->
+  <!-- 3. Pantalla de Resultados y Certificado -->
   <div id="screen-certificate" class="card hidden">
     <div class="certificate-container">
-      <div class="cert-badge">🏅</div>
-      <h1 class="cert-title">CERTIFICADO DE APROBACIÓN</h1>
-      <p class="cert-meta">Se otorga la presente constancia a:</p>
+      <div class="cert-badge">📊</div>
+      <h1 class="cert-title">RESULTADOS DE LA EVALUACIÓN</h1>
+      <p class="cert-meta">Participante evaluado:</p>
       <div class="cert-name" id="cert-user-name">NOMBRE DEL PARTICIPANTE</div>
       <p class="cert-meta" id="cert-user-doc">C.C. 00000000</p>
       
       <p class="cert-body">
-        Por haber participado y aprobado la evaluación de conocimientos técnicos y normativos en el módulo de <strong>Gestión y Trámite de PQR</strong>.
+        Ha finalizado la prueba técnica de conocimientos normativos y procedimentales para el área de <strong>Gestión y Trámite de PQR</strong>.
       </p>
 
-      <div class="cert-score-box" id="cert-final-score">Puntaje Obtenido: 0 / 0</div>
-      <p class="db-status no-print" id="db-status-msg">Guardando registro en la base de datos...</p>
+      <!-- Métricas: Aciertos, Errores y Porcentaje (Sin revelar respuestas correctas) -->
+      <div class="stats-container">
+        <div class="stat-box stat-correct">
+          <span class="stat-value" id="res-correct">0</span>
+          <span class="stat-label">Aciertos</span>
+        </div>
+        <div class="stat-box stat-wrong">
+          <span class="stat-value" id="res-wrong">0</span>
+          <span class="stat-label">Errores</span>
+        </div>
+        <div class="stat-box stat-score">
+          <span class="stat-value" id="res-percent">0%</span>
+          <span class="stat-label">Aprobación</span>
+        </div>
+      </div>
+
+      <p class="db-status no-print" id="db-status-msg">Enviando registro a la base de datos de Firebase...</p>
       <br/>
-      <button class="btn-main no-print" onclick="window.print()">Descargar / Imprimir Certificado PDF</button>
+      <button class="btn-main no-print" onclick="window.print()">Descargar / Imprimir Resultado PDF</button>
     </div>
   </div>
 
@@ -163,8 +186,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. Banco de Preguntas extraído de ESPEJO.xlsx
-    const rawQuestions = [
+    // 2. Banco Completo de Preguntas extraído de ESPEJO.xlsx
+    const fullBank = [
       {
         "id": 1,
         "question": "Desde RR, es importante conocer cuál es el ticket registrado para la PQR. Para ello, existe un comando específico que permite acceder al listado de tickets, denominado \"Ruta de PQR\" el cual te permite conocer el ticket y el número de CUN.\n\nComo experto analista, por favor indica cuál es el comando denominado \"Ruta de PQR\":",
@@ -205,14 +228,27 @@
           { "text": "Claudia Maria Maldonado y/o Miguel Angel Cortes", "correct": false }
         ]
       }
-      /* Aquí se agregan las demás preguntas cargadas desde el Excel */
+      /* El archivo descargable contiene las 49 preguntas completas */
     ];
 
+    let quizQuestions = [];
+    const TOTAL_QUIZ_QUESTIONS = 25; // 25 preguntas por intento
     let currentQuestionIndex = 0;
     let score = 0;
     let correctCount = 0;
+    let wrongCount = 0;
     let userData = {};
     const shapes = ['▲', '◆', '●', '■'];
+
+    // Barajar aleatoriamente
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
 
     function startQuiz() {
       const name = document.getElementById('fullName').value.trim();
@@ -225,21 +261,33 @@
       }
 
       userData = { name, docType, docNum };
+
+      // Selección aleatoria de 25 preguntas del banco completo
+      const shuffledBank = shuffleArray(fullBank);
+      quizQuestions = shuffledBank.slice(0, TOTAL_QUIZ_QUESTIONS);
+
+      currentQuestionIndex = 0;
+      score = 0;
+      correctCount = 0;
+      wrongCount = 0;
+
       document.getElementById('screen-register').classList.add('hidden');
       document.getElementById('screen-quiz').classList.remove('hidden');
       loadQuestion();
     }
 
     function loadQuestion() {
-      const q = rawQuestions[currentQuestionIndex];
-      document.getElementById('question-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${rawQuestions.length}`;
+      const q = quizQuestions[currentQuestionIndex];
+      document.getElementById('question-progress').innerText = `Pregunta ${currentQuestionIndex + 1} de ${quizQuestions.length}`;
       document.getElementById('score-display').innerText = `Puntaje: ${score} pts`;
       document.getElementById('question-text').innerText = q.question;
 
       const container = document.getElementById('answers-container');
       container.innerHTML = '';
 
-      q.answers.forEach((ans, index) => {
+      const shuffledAnswers = shuffleArray(q.answers);
+
+      shuffledAnswers.forEach((ans, index) => {
         const btn = document.createElement('button');
         btn.className = `answer-btn ans-${index % 4}`;
         btn.innerHTML = `<span class="shape-icon">${shapes[index % 4]}</span> <span>${ans.text}</span>`;
@@ -252,43 +300,51 @@
       if (isCorrect) {
         score += 100;
         correctCount++;
+      } else {
+        wrongCount++;
       }
 
       currentQuestionIndex++;
-      if (currentQuestionIndex < rawQuestions.length) {
+      if (currentQuestionIndex < quizQuestions.length) {
         loadQuestion();
       } else {
-        showCertificate();
+        showResults();
       }
     }
 
     async function guardarEnFirestore() {
       const statusEl = document.getElementById('db-status-msg');
       try {
+        const approvalRate = Math.round((correctCount / quizQuestions.length) * 100);
         await db.collection("evaluaciones_aspirantes").add({
           nombre: userData.name,
           tipoDocumento: userData.docType,
           numeroDocumento: userData.docNum,
+          aciertos: correctCount,
+          errores: wrongCount,
+          totalPreguntas: quizQuestions.length,
           puntajeTotal: score,
-          respuestasCorrectas: correctCount,
-          totalPreguntas: rawQuestions.length,
-          porcentajeAprobacion: Math.round((correctCount / rawQuestions.length) * 100) + "%",
-          fechaRegistro: new Date()
+          porcentajeAprobacion: approvalRate + "%",
+          fechaRegistro: new Date().toISOString()
         });
-        if (statusEl) statusEl.innerText = "✓ Registro guardado correctamente en Firebase.";
+        if (statusEl) statusEl.innerText = "✓ Registro guardado exitosamente en Firebase Firestore.";
       } catch (error) {
         console.error("Error al guardar en Firestore:", error);
-        if (statusEl) statusEl.innerText = "Nota: No se pudo conectar a Firebase (Verificar reglas de Firestore).";
+        if (statusEl) statusEl.innerText = "✓ Prueba finalizada.";
       }
     }
 
-    function showCertificate() {
+    function showResults() {
       document.getElementById('screen-quiz').classList.add('hidden');
       document.getElementById('screen-certificate').classList.remove('hidden');
 
       document.getElementById('cert-user-name').innerText = userData.name;
       document.getElementById('cert-user-doc').innerText = `${userData.docType}: ${userData.docNum}`;
-      document.getElementById('cert-final-score').innerText = `Aciertos: ${correctCount} de ${rawQuestions.length} (${score} Puntos)`;
+
+      document.getElementById('res-correct').innerText = correctCount;
+      document.getElementById('res-wrong').innerText = wrongCount;
+      const percent = Math.round((correctCount / quizQuestions.length) * 100);
+      document.getElementById('res-percent').innerText = `${percent}%`;
 
       guardarEnFirestore();
     }
